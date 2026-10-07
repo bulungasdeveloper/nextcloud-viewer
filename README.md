@@ -522,6 +522,35 @@ opens on it. The view chosen is kept until the viewer closes.
 `compare()` when viewer is already open compares the new files in it. Their
 elements are mounted again, as for every file opened.
 
+### 🖼️ Show a file outside the viewer
+
+To show a file where it is mentioned, as the preview of a file link in a chat
+or a document, ask the viewer which element shows it and render that element
+yourself:
+
+```ts
+import { getViewer } from '@nextcloud/viewer'
+
+const tagName = await getViewer().elementFor(file)
+if (tagName !== undefined) {
+	const element = document.createElement(tagName)
+	Object.assign(element, { file, files: [file], maxWidth: 600, maxHeight: 400, embedded: true })
+	element.addEventListener('loaded', () => { /* shown */ })
+	element.addEventListener('errored', () => { /* fall back to a plain link */ })
+	container.append(element)
+}
+```
+
+It names the element of the handler the viewer would open the file with, once
+that element is defined (a handler with `onInit()` is initialized first), and
+nothing when no handler takes the file or the user cannot read it. The element
+takes the props and emits the events of any handler (`ViewerProps`,
+`ViewerEmits`). Nothing of the viewer itself is loaded for it.
+
+Set `embedded` so the handler knows it is shown inline: videos and sounds then
+wait to be played rather than starting on their own. Editing is usually better
+left to the viewer: offer a way to open the file there with `getViewer().open()`.
+
 ### 🕰️ Nextcloud 35 and older
 
 The library is made for Nextcloud 36, whose server ships a copy of it. Older
@@ -561,7 +590,7 @@ instead, and the viewer works with `@nextcloud/files` nodes rather than the
 | `OCA.Viewer.close()`                              | `getViewer().close()`                                          |
 | `OCA.Viewer.mimetypes.includes(node.mime)`        | `canView(node)`                                                |
 | `OCA.Viewer.mimetypesCompare.includes(node.mime)` | `canView(node)`                                                |
-| `OCA.Viewer.availableHandlers`                    | `getHandlers()`, or `canView(node)` to test one file           |
+| `OCA.Viewer.availableHandlers`                    | `getHandlers()`, `canView(node)` to test one file, `getViewer().elementFor(node)` to render it |
 | `OCA.Viewer.registerHandler({ component })`       | `registerHandler({ tagName })`, see above                      |
 | `canCompare: true` on a handler                   | `canCompare: (nodes) => true`, and `canCompare(node)` to decide whether to offer it |
 | `\OCP\Util::addScript` for the registration        | `\OCP\Util::addInitScript`                                      |

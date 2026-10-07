@@ -10,7 +10,7 @@
 			<audio-skin class="viewer-media" tabindex="-1">
 				<audio
 					ref="audio"
-					:autoplay="true"
+					:autoplay="!embedded"
 					:src="src"
 					preload="metadata"
 					@error.capture.prevent.stop="onFail"
