@@ -6,7 +6,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { browserSupportedMimes as audioMimes } from '../lib/models/audios.ts'
-import { browserSupportedMimes as imageMimes, previewSupportedMimes } from '../lib/models/images.ts'
+import { browserSupportedMimes as imageMimes, JXL_MIME, previewSupportedMimes } from '../lib/models/images.ts'
 import { supportedMimes as scoreMimes } from '../lib/models/sheetmusic.ts'
 import { aliasedMimes, browserSupportedMimes as videoMimes } from '../lib/models/videos.ts'
 
@@ -20,6 +20,7 @@ import { aliasedMimes, browserSupportedMimes as videoMimes } from '../lib/models
  */
 const CLAIMED = [
 	...imageMimes,
+	JXL_MIME,
 	...previewSupportedMimes,
 	...videoMimes,
 	...Object.keys(aliasedMimes),
@@ -45,6 +46,10 @@ const NOT_COVERED_HERE: Record<string, string> = {
 	'image/emf': 'needs a server-rendered preview',
 	'image/x-xbitmap': 'needs a server-rendered preview',
 	'image/jp2': 'needs a server-rendered preview',
+
+	// Offered only where the browser decodes it, which the Chromium the
+	// suite runs (153) does not yet: Chrome decodes it from 155
+	'image/jxl': 'the suite runs a Chromium that predates JPEG XL',
 
 	// Claimed so the handler takes the file, but no engine here decodes it,
 	// so a fixture would only record which browser ran the suite
