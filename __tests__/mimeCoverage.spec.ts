@@ -47,10 +47,6 @@ const NOT_COVERED_HERE: Record<string, string> = {
 	'image/x-xbitmap': 'needs a server-rendered preview',
 	'image/jp2': 'needs a server-rendered preview',
 
-	// Offered only where the browser decodes it, which the Chromium the
-	// suite runs (153) does not yet: Chrome decodes it from 155
-	'image/jxl': 'the suite runs a Chromium that predates JPEG XL',
-
 	// Claimed so the handler takes the file, but no engine here decodes it,
 	// so a fixture would only record which browser ran the suite
 	'audio/aacp': 'Chromium reports it cannot play this',
@@ -93,7 +89,7 @@ function openedByTests(): Set<string> {
 		}
 		// Table-driven specs list their fixtures rather than calling open
 		// with a literal, so take the file names they name as well
-		for (const match of source.matchAll(/'([\w.-]+\.(?:jpg|jpeg|png|gif|bmp|webp|ico|apng|avif|svg|tiff|heic|jp2|musicxml|mxl|mp3|mp4|wav|flac|ogg|webm|m4a|aac))'/g)) {
+		for (const match of source.matchAll(/'([\w.-]+\.(?:jpg|jpeg|png|gif|bmp|webp|ico|apng|avif|jxl|svg|tiff|heic|jp2|musicxml|mxl|mp3|mp4|wav|flac|ogg|webm|m4a|aac))'/g)) {
 			opened.add(match[1]!)
 		}
 	}

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { expect, test } from '@playwright/test'
-import { ViewerPage } from './support/viewer.ts'
+import { decodesJxl, ViewerPage } from './support/viewer.ts'
 
 /**
  * The formats the image handler says every browser can decode, and the
@@ -19,11 +19,16 @@ const BROWSER_FORMATS = [
 	{ file: 'picture.webp', width: 120, height: 90 },
 	{ file: 'picture.ico', width: 32, height: 32 },
 	{ file: 'picture.apng', width: 120, height: 90 },
+	// Not every browser decodes it yet: the Chromium of Playwright 1.64
+	// does, its Firefox does not
+	{ file: 'picture.jxl', width: 120, height: 90 },
 ]
 
 test.describe('Formats the browser decodes itself', () => {
 	for (const { file, width, height } of BROWSER_FORMATS) {
 		test(`opens ${file} and paints it`, async ({ page }) => {
+			await page.goto('/')
+			test.skip(file.endsWith('.jxl') && !await decodesJxl(page), 'this browser does not decode JPEG XL')
 			const viewer = new ViewerPage(page)
 			await viewer.open(file)
 			await viewer.waitForOpen()
