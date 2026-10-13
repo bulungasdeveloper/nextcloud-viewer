@@ -107,6 +107,12 @@ export interface IHandler {
 	canEdit?: boolean
 
 	/**
+	 * Whether the viewer offers a slideshow through the other files it can
+	 * open next to this one. Defaults to true.
+	 */
+	canSlideshow?: boolean
+
+	/**
 	 * Whether comparing versions of these files is worth offering, like
 	 * `enabled()` says whether it opens them. It is a hint for callers deciding
 	 * whether to offer it at all (see `canCompare()`): `getViewer().compare()`

@@ -15,7 +15,7 @@
 		:dark="true"
 		:data-handler="currentHandler?.id"
 		:disableSwipe="!canSwipe || editing"
-		:enableSlideshow="!isComparing && (hasPrevious || hasNext)"
+		:enableSlideshow="!isComparing && currentHandler?.canSlideshow !== false && (hasPrevious || hasNext)"
 		:hasNext="!isComparing && hasNext"
 		:hasPrevious="!isComparing && hasPrevious"
 		:inlineActions="inlineActions"
