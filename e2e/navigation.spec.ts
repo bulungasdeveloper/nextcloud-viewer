@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { expect, test } from '@playwright/test'
-import { ViewerPage } from './support/viewer.ts'
+import { decodesJxl, ViewerPage } from './support/viewer.ts'
 
 // The order the playground lists them in, which is the order the viewer is
 // handed and the order it has to step through. Images, video and audio
@@ -36,6 +36,8 @@ const MEDIA = [
 	'trailer.webm',
 	'trailer.jpg',
 	'photo-edited.jpg',
+	// Left out where the browser does not decode JPEG XL
+	'picture.jxl',
 ]
 
 // No group, so the sheet music only pages among itself
@@ -47,12 +49,13 @@ test.describe('Viewer navigation', () => {
 		await viewer.open('photo.jpg')
 		await viewer.waitForOpen()
 		expect(await viewer.currentName()).toBe('photo.jpg')
+		const media = await decodesJxl(page) ? MEDIA : MEDIA.filter((file) => file !== 'picture.jxl')
 
 		// More than one file, so it offers somewhere to go
 		await expect(viewer.nextButton).toBeVisible()
 		await expect(viewer.previousButton).toBeVisible()
 
-		for (const file of MEDIA.slice(1)) {
+		for (const file of media.slice(1)) {
 			await viewer.next()
 			await viewer.waitForOpen()
 			expect(await viewer.currentName()).toBe(file)
@@ -61,11 +64,11 @@ test.describe('Viewer navigation', () => {
 		// Past the last file is the first again, and back past it the last
 		await viewer.next()
 		await viewer.waitForOpen()
-		expect(await viewer.currentName()).toBe(MEDIA[0])
+		expect(await viewer.currentName()).toBe(media[0])
 
 		await viewer.previous()
 		await viewer.waitForOpen()
-		expect(await viewer.currentName()).toBe(MEDIA.at(-1))
+		expect(await viewer.currentName()).toBe(media.at(-1))
 	})
 
 	test('pages within the handler group and not across it', async ({ page }) => {

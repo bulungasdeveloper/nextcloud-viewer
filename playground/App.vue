@@ -80,6 +80,8 @@ const fixtures: Fixture[] = [
 	...(withPreviews ? [{ name: 'previewed.webm', mime: 'video/webm', hasPreview: true }] : []),
 	// photo.jpg in black and white, to compare with it
 	{ name: 'photo-edited.jpg', mime: 'image/jpeg' },
+	// Opened only where the browser decodes JPEG XL
+	{ name: 'picture.jxl', mime: 'image/jxl' },
 	...(withOddNames
 		? ODD_FIXTURES.map(({ name, mime }) => ({ name: oddFileName(name), mime, path: `${oddFolderName(name)}/${oddFileName(name)}` }))
 		: []),

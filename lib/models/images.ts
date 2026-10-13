@@ -57,6 +57,32 @@ export const browserSupportedMimes = [
 ]
 
 /**
+ * JPEG XL is decoded by Safari, and by Chrome and Firefox only in their
+ * latest versions. It is offered once this browser is found to decode it:
+ * anywhere else the file downloads, as it did before.
+ */
+export const JXL_MIME = 'image/jxl'
+
+// A white pixel, encoded with libjxl
+const JXL_PIXEL = 'data:image/jxl;base64,/woAEBAJCAABACwASxiLFcJJQR6A/gA='
+
+let decodesJxl = false
+
+/**
+ * Whether this browser decodes JPEG XL.
+ */
+export async function canDecodeJxl(): Promise<boolean> {
+	const image = new Image()
+	image.src = JXL_PIXEL
+	try {
+		await image.decode()
+		return true
+	} catch {
+		return false
+	}
+}
+
+/**
  * The mimes that need a preview, minus the ones this server will not
  * generate one for: offering those would open a file that cannot be shown.
  */
@@ -94,6 +120,11 @@ export async function registerImageCustomElement(): Promise<void> {
  * Register the image handler.
  */
 export function registerImageHandler() {
+	// Answered in a few milliseconds, long before a file can be clicked
+	canDecodeJxl().then((decodes) => {
+		decodesJxl = decodes
+	})
+
 	registerHandler({
 		id: 'images',
 		displayName: t('Images'),
@@ -122,6 +153,10 @@ export function registerImageHandler() {
 				// Always allow browser supported mimes
 				if (browserSupportedMimes.includes(node.mime)) {
 					return true
+				}
+
+				if (node.mime === JXL_MIME) {
+					return decodesJxl
 				}
 
 				// Only allow preview supported mimes if they are enabled in the server config

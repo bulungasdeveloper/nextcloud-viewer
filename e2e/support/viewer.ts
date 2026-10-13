@@ -66,3 +66,22 @@ export class ViewerPage {
 		await this.previousButton.click()
 	}
 }
+
+/**
+ * Whether the browser running the test decodes JPEG XL, asked the way the
+ * image handler asks it: with the same one pixel picture.
+ *
+ * @param page the page
+ */
+export async function decodesJxl(page: Page): Promise<boolean> {
+	return page.evaluate(async () => {
+		const image = new Image()
+		image.src = 'data:image/jxl;base64,/woAEBAJCAABACwASxiLFcJJQR6A/gA='
+		try {
+			await image.decode()
+			return true
+		} catch {
+			return false
+		}
+	})
+}

@@ -6,7 +6,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { browserSupportedMimes as audioMimes } from '../lib/models/audios.ts'
-import { browserSupportedMimes as imageMimes, previewSupportedMimes } from '../lib/models/images.ts'
+import { browserSupportedMimes as imageMimes, JXL_MIME, previewSupportedMimes } from '../lib/models/images.ts'
 import { supportedMimes as scoreMimes } from '../lib/models/sheetmusic.ts'
 import { aliasedMimes, browserSupportedMimes as videoMimes } from '../lib/models/videos.ts'
 
@@ -20,6 +20,7 @@ import { aliasedMimes, browserSupportedMimes as videoMimes } from '../lib/models
  */
 const CLAIMED = [
 	...imageMimes,
+	JXL_MIME,
 	...previewSupportedMimes,
 	...videoMimes,
 	...Object.keys(aliasedMimes),
@@ -88,7 +89,7 @@ function openedByTests(): Set<string> {
 		}
 		// Table-driven specs list their fixtures rather than calling open
 		// with a literal, so take the file names they name as well
-		for (const match of source.matchAll(/'([\w.-]+\.(?:jpg|jpeg|png|gif|bmp|webp|ico|apng|avif|svg|tiff|heic|jp2|musicxml|mxl|mp3|mp4|wav|flac|ogg|webm|m4a|aac))'/g)) {
+		for (const match of source.matchAll(/'([\w.-]+\.(?:jpg|jpeg|png|gif|bmp|webp|ico|apng|avif|jxl|svg|tiff|heic|jp2|musicxml|mxl|mp3|mp4|wav|flac|ogg|webm|m4a|aac))'/g)) {
 			opened.add(match[1]!)
 		}
 	}
