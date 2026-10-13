@@ -446,3 +446,34 @@ describe('swiping away from a handler', () => {
 		expect(modalProps().disableSwipe).toBe(true)
 	})
 })
+
+describe('the slideshow', () => {
+	it('is offered for neighbouring files the handler can open', async () => {
+		renders.length = 0
+		const f1 = makeFile({ basename: 'a.jpg', mime: 'image/jpeg' })
+		const f2 = makeFile({ basename: 'b.jpg', mime: 'image/jpeg' })
+		const { vm, wrapper, modalProps } = mountViewer([probeHandler()])
+
+		await vm.open([f1, f2], f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+		expect(modalProps().enableSlideshow).toBe(true)
+
+		// Zooming an image stops swiping but not the slideshow
+		emitFromProbe!('update:canSwipe', false)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().enableSlideshow).toBe(true)
+	})
+
+	it('is not offered when the handler opts out', async () => {
+		renders.length = 0
+		const f1 = makeFile({ basename: 'a.md', mime: 'text/markdown' })
+		const f2 = makeFile({ basename: 'b.md', mime: 'text/markdown' })
+		const { vm, wrapper, modalProps } = mountViewer([probeHandler({ canSlideshow: false })])
+
+		await vm.open([f1, f2], f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+		expect(modalProps().enableSlideshow).toBe(false)
+	})
+})
