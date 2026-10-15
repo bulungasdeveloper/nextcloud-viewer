@@ -5,6 +5,7 @@
 
 import type { IFile } from '@nextcloud/files'
 
+import { getCurrentUser } from '@nextcloud/auth'
 import { encodePath } from '@nextcloud/paths'
 import { generateUrl } from '@nextcloud/router'
 import { getSharingToken, isPublicShare } from '@nextcloud/sharing/public'
@@ -113,6 +114,20 @@ export function getLargestPreview(file: IFile): string | undefined {
 }
 
 /**
+ * The token of the public share a file is reached through: the page's, on a
+ * Files share page, or the one in the file's own address, for a file another
+ * app took from a share, as Talk does for a guest.
+ *
+ * @param file - The file
+ */
+function shareToken(file: IFile): string | undefined {
+	if (isPublicShare()) {
+		return getSharingToken() ?? undefined
+	}
+	return /\/public\.php\/dav\/files\/([^/]+)\//.exec(file.source)?.[1]
+}
+
+/**
  * The URL of a server preview of a file, at most this many pixels on each side.
  *
  * @param file - The file to resolve a preview URL for
@@ -130,14 +145,20 @@ function serverPreview(file: IFile, x: number, y: number): string | undefined {
 		// the same file and the preview is fetched again for nothing.
 		+ (file.attributes.etag ? `&etag=${String(file.attributes.etag).replace(/&quot;|"/g, '')}` : '')
 
-	if (file.attributes.hasPreview) {
-		// TODO: find a nicer standard way of doing this?
-		if (isPublicShare()) {
-			// The path inside the share: a folder share finds the file by
-			// it, and its name alone only matches one at the top of it
-			return generateUrl(`/apps/files_sharing/publicpreview/${getSharingToken()}?file=${encodePath(file.path)}&${searchParams}`)
-		}
-		return generateUrl(`/core/preview?${searchParams}`)
+	if (!file.attributes.hasPreview) {
+		return undefined
 	}
-	return undefined
+
+	const token = shareToken(file)
+	if (token !== undefined) {
+		// The path inside the share: a folder share finds the file by
+		// it, and its name alone only matches one at the top of it
+		return generateUrl(`/apps/files_sharing/publicpreview/${token}?file=${encodePath(file.path)}&${searchParams}`)
+	}
+	// Only answered for someone logged in. A guest is shown the file itself,
+	// which the page that showed it to them lets them read
+	if (getCurrentUser() === null) {
+		return undefined
+	}
+	return generateUrl(`/core/preview?${searchParams}`)
 }

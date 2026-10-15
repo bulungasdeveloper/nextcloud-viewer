@@ -35,6 +35,23 @@ test.describe('Previews', () => {
 		expect(url.searchParams.get('etag')).toBe('etag-2')
 	})
 
+	// A guest of a Talk conversation, say: /core/preview only answers someone
+	// logged in, and would refuse them with a 401
+	test('shows a guest the file itself rather than asking a preview they cannot have', async ({ page }) => {
+		const requests: string[] = []
+		await page.route('**/core/preview*', async (route) => {
+			requests.push(route.request().url())
+			await route.fulfill({ status: 401 })
+		})
+
+		const viewer = new ViewerPage(page)
+		await viewer.open('previewed.jpg', 'previews&guest')
+		await viewer.waitForOpen()
+
+		await expect(viewer.container.locator('img').first()).toHaveAttribute('src', /previewed\.jpg$/)
+		expect(requests).toHaveLength(0)
+	})
+
 	test('asks for the preview by hand when the share forbids downloading', async ({ page }) => {
 		// The server refuses a plain request for the preview of a share that
 		// cannot be downloaded, and serves it when the request says it comes

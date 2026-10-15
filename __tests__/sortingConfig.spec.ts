@@ -6,10 +6,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const get = vi.fn()
 const isPublicShare = vi.fn(() => false)
+const getCurrentUser = vi.fn<() => { uid: string } | null>(() => ({ uid: 'alice' }))
 
 vi.mock('@nextcloud/axios', () => ({ default: { get } }))
 vi.mock('@nextcloud/router', () => ({ generateUrl: (url: string) => `/index.php/${url}` }))
 vi.mock('@nextcloud/sharing/public', () => ({ isPublicShare: () => isPublicShare() }))
+vi.mock('@nextcloud/auth', () => ({ getCurrentUser: () => getCurrentUser() }))
 
 const { getSortingConfig } = await import('../lib/services/sortingConfig.ts')
 
@@ -17,6 +19,7 @@ describe('getSortingConfig', () => {
 	beforeEach(() => {
 		get.mockReset()
 		isPublicShare.mockReturnValue(false)
+		getCurrentUser.mockReturnValue({ uid: 'alice' })
 	})
 
 	it('reads how the files list is sorted', async () => {
@@ -40,6 +43,14 @@ describe('getSortingConfig', () => {
 
 	it('asks nothing on a public share, which has no such config', async () => {
 		isPublicShare.mockReturnValue(true)
+
+		await expect(getSortingConfig()).resolves.toEqual({ sortingMode: 'basename', sortingOrder: 'asc' })
+		expect(get).not.toHaveBeenCalled()
+	})
+
+	// A guest of a Talk conversation, say: the request would only get a 401
+	it('asks nothing for a guest, who has no such config either', async () => {
+		getCurrentUser.mockReturnValue(null)
 
 		await expect(getSortingConfig()).resolves.toEqual({ sortingMode: 'basename', sortingOrder: 'asc' })
 		expect(get).not.toHaveBeenCalled()
