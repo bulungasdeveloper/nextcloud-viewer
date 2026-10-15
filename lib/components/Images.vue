@@ -94,6 +94,7 @@ import { preloadImage, preloadMedia, preloadPreview } from '../services/mediaPre
 import { canDownload } from '../utils/canDownload.ts'
 import { t } from '../utils/l10n.ts'
 import { findLivePhotoPeerFromFileId } from '../utils/livePhotoUtils.ts'
+import { photoSize } from '../utils/photoMetadata.ts'
 import { getLargestPreview, getPreviewIfAny } from '../utils/previewUtils.ts'
 
 defineOptions({
@@ -152,8 +153,10 @@ const PIXEL_ZOOM_LIMIT = 4
 // Whether what is shown is the server's preview, which a sharper one can
 // replace, rather than the file itself or a preview an app chose
 const shownFromPreview = ref(false)
-// The intrinsic width of the most detailed version of the picture shown
-const nativeWidth = ref(0)
+// The intrinsic width of the most detailed version of the picture shown,
+// from the start when the Photos app recorded the picture's own: the zoom
+// can then go that far before the sharper preview has been fetched
+const nativeWidth = ref(photoSize(props.file)?.width ?? 0)
 // The sharper preview fetched for zooming in, once it is on screen
 let detailSource: string | null = null
 let detailRequested = false
@@ -448,14 +451,15 @@ async function fetchDetail() {
 }
 
 /**
- * Drop the sharper preview of the file shown before.
+ * Drop the sharper preview of the file shown before, and start again from
+ * what is known of the new one.
  */
 function forgetDetail() {
 	detailController?.abort()
 	detailController = null
 	detailSource = null
 	detailRequested = false
-	nativeWidth.value = 0
+	nativeWidth.value = photoSize(props.file)?.width ?? 0
 }
 
 // The viewer hears 'loaded' as a DOM event on the custom element, and an
