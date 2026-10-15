@@ -998,6 +998,15 @@ describe('zooming into a picture', () => {
 		expect(wrapper.emitted('errored')).toBeUndefined()
 	})
 
+	it('zooms as far as the size Photos recorded, before the sharper picture comes', async () => {
+		preloadImageMock.mockRejectedValue(new Error('Could not load'))
+		const { wrapper } = await mountPreviewed({ hasPreview: true, 'metadata-photos-size': { width: 4000, height: 4000 } })
+
+		await zoomIn(wrapper, 40)
+
+		expect(drawnWidth(wrapper)).toBe(16000)
+	})
+
 	it('asks with the preview header on a share that forbids downloading', async () => {
 		preloadPreviewMock.mockResolvedValue('blob:detail')
 		preloadImageMock.mockResolvedValue(4000)

@@ -28,6 +28,8 @@ interface Fixture {
 	 * viewer asks for /core/preview and the test decides what comes back.
 	 */
 	hasPreview?: boolean
+	/** What the server keeps of a picture: its blurhash, and its size from Photos */
+	metadata?: { blurhash: string, size: { width: number, height: number } }
 }
 
 // The previewed file needs a previews endpoint to stand behind it, so it is
@@ -42,7 +44,7 @@ const startSlideshow = flags.has('slideshow')
 const withOddNames = flags.has('oddnames')
 
 const fixtures: Fixture[] = [
-	{ name: 'photo.jpg', mime: 'image/jpeg', editable: true },
+	{ name: 'photo.jpg', mime: 'image/jpeg', editable: true, metadata: { blurhash: 'LODQZ:oNEew}}bWoJ5soExS1bFoM', size: { width: 3500, height: 2335 } } },
 	...(withPreviews ? [{ name: 'previewed.jpg', mime: 'image/jpeg', hasPreview: true }] : []),
 	// A share that forbids downloading: the preview endpoint refuses the
 	// element's own request, so the viewer has to ask for it by hand
@@ -116,6 +118,9 @@ const nodes: IFile[] = fixtures.map((fixture, index) => new File({
 		hasPreview: fixture.hasPreview === true,
 		etag: `etag-${index + 1}`,
 		'hide-download': fixture.noDownload === true,
+		...(fixture.metadata
+			? { 'metadata-blurhash': fixture.metadata.blurhash, 'metadata-photos-size': fixture.metadata.size }
+			: {}),
 	},
 }))
 

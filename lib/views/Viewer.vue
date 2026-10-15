@@ -152,7 +152,17 @@
 		</template>
 
 		<!-- Loading overlay, shown on top of the (mounted but hidden) handler -->
-		<span v-if="loading && !errorString" class="viewer__loading">
+		<span
+			v-if="loading && !errorString"
+			class="viewer__loading"
+			:class="{ 'viewer__loading--placeholder': placeholder }">
+			<!-- The picture's colours, blurred, at the size it will take -->
+			<span
+				v-if="placeholder"
+				class="viewer__placeholder"
+				:style="{ width: `${placeholder.width}px`, height: `${placeholder.height}px` }">
+				<NcBlurHash :hash="placeholder.hash" />
+			</span>
 			<NcLoadingIcon :appearance="lightBackdrop ? 'dark' : 'light'" :size="32" />
 			<span class="viewer__loading-hint" role="status">
 				<template v-if="slowLoading">{{ t('Still loading…') }}</template>
@@ -310,6 +320,7 @@ import { useIsMobile } from '@nextcloud/vue/composables/useIsMobile'
 import debounce from 'debounce'
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, triggerRef, useTemplateRef, watch } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcBlurHash from '@nextcloud/vue/components/NcBlurHash'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -343,6 +354,7 @@ import { initHandlerElement } from '../utils/customElements.ts'
 import { restoreTitle, setViewerTitle } from '../utils/documentTitle.ts'
 import { emittedValue, toError } from '../utils/handlerEvents.ts'
 import { t } from '../utils/l10n.ts'
+import { blurhash, fitInto, photoSize } from '../utils/photoMetadata.ts'
 import { renameFile } from '../utils/rename.ts'
 import { getViewer } from '../viewer.ts'
 
@@ -484,6 +496,24 @@ const offerDifferences = computed(() => {
 	}
 })
 const showsDifferences = computed(() => offerDifferences.value && comparisonView.value === 'differences')
+
+/**
+ * What to show of a picture while it loads: its blurhash, at the size it
+ * will be shown at. Only for a picture whose size is known, as a blurhash
+ * says nothing of its proportions.
+ */
+const placeholder = computed(() => {
+	const file = currentFile.value
+	if (!file || isComparing.value || width.value === 0) {
+		return undefined
+	}
+	const hash = blurhash(file)
+	const size = photoSize(file)
+	if (hash === undefined || size === undefined) {
+		return undefined
+	}
+	return { hash, ...fitInto(size, width.value, height.value) }
+})
 
 /**
  * Switch between the files side by side and their differences in one view.
@@ -1984,6 +2014,33 @@ defineExpose<ViewerAPI>({
 		height: auto !important;
 		background-color: transparent !important;
 		box-shadow: none !important;
+	}
+}
+
+.viewer__loading--placeholder {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	// Over the blurred picture rather than under it
+	.loading-icon,
+	.viewer__loading-hint {
+		position: absolute;
+	}
+
+	.viewer__loading-hint {
+		inset-block-start: calc(50% + 24px);
+	}
+}
+
+.viewer__placeholder {
+	display: block;
+
+	canvas {
+		display: block;
+		width: 100%;
+		height: 100%;
 	}
 }
 

@@ -8,7 +8,7 @@ import type { ViewerSession } from '../../lib/session.ts'
 import type { CompareOptions, ViewerBeforeDownloadDetail } from '../../lib/viewer.ts'
 
 import { flushPromises } from '@vue/test-utils'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the event bus BEFORE importing the component (shared manual mock).
 vi.mock('@nextcloud/event-bus')
@@ -953,6 +953,48 @@ describe('Viewer loading gate', () => {
 		await vm.open([f1, f2], f2)
 		await wrapper.vm.$nextTick()
 		expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+	})
+
+	describe('a picture whose size and blurhash are known', () => {
+		const HASH = 'LEHV6nWB2yk8pyo0adR*.7kCMdnj'
+
+		// The space the viewer gives the picture is its container's
+		beforeEach(() => {
+			vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1024)
+			vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(768)
+		})
+
+		afterEach(() => {
+			vi.restoreAllMocks()
+		})
+
+		it('shows its blurhash at the size it will take, until it has loaded', async () => {
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg', attributes: { 'metadata-blurhash': HASH, 'metadata-photos-size': { width: 4000, height: 2000 } } })
+			await vm.open([file], file)
+			await wrapper.vm.$nextTick()
+
+			const placeholder = wrapper.find('.viewer__placeholder')
+			expect(placeholder.findComponent({ name: 'NcBlurHash' }).props('hash')).toBe(HASH)
+			// Fitted like the picture: the 1024 by 768 the tests give the viewer
+			expect((placeholder.element as HTMLElement).style.width).toBe('1024px')
+			expect((placeholder.element as HTMLElement).style.height).toBe('512px')
+
+			wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+			await wrapper.vm.$nextTick()
+			expect(wrapper.find('.viewer__placeholder').exists()).toBe(false)
+		})
+
+		// A blurhash says nothing of the picture's proportions
+		it('keeps to the spinner when only the blurhash is known', async () => {
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg', attributes: { 'metadata-blurhash': HASH } })
+			await vm.open([file], file)
+			await wrapper.vm.$nextTick()
+
+			expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+			expect(wrapper.find('.viewer__placeholder').exists()).toBe(false)
+		})
 	})
 
 	it('mounts both handler elements in comparison mode', async () => {

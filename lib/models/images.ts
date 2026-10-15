@@ -9,6 +9,7 @@ import { registerHandler } from '../handlers.ts'
 import { logger } from '../services/logger.ts'
 import { defineCustomElementOnce } from '../utils/customElements.ts'
 import { t } from '../utils/l10n.ts'
+import { requestPhotoSize } from '../utils/photoMetadata.ts'
 
 interface PreviewCapabilities {
 	core?: {
@@ -120,6 +121,9 @@ export async function registerImageCustomElement(): Promise<void> {
  * Register the image handler.
  */
 export function registerImageHandler() {
+	// Shown at its size, under its blurhash, before it has loaded
+	requestPhotoSize()
+
 	// Answered in a few milliseconds, long before a file can be clicked
 	canDecodeJxl().then((decodes) => {
 		decodesJxl = decodes
