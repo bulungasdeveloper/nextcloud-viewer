@@ -6,6 +6,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.19
+
+### Added
+
+- The viewer has settings, behind a cog button at the bottom left or the `?`
+  key: how long the slideshow shows each file, and the list of keyboard
+  shortcuts. From Nextcloud 36 they are kept for the user
+  (#136, #109, nextcloud/viewer#447)
+- Videos and audio start at the volume the user last chose, muted or not
+  (#136)
+- Files offers a slideshow of the folder shown when pictures and videos are
+  most of its files (#137, nextcloud/viewer#1524)
+- JPEG XL pictures open in the browsers that decode them, like Safari and
+  Chrome from 155. Elsewhere they download, as before
+  (#141, nextcloud/viewer#2801)
+- A handler can set `canSlideshow: false` to keep the slideshow button off
+  its files, as an editor would (#142)
+
+### Other
+
+* Bump @playwright/test from 1.62.1 to 1.64.0
+
 ## 2.0.0-beta.18
 
 ### Breaking
