@@ -264,6 +264,7 @@
 
 		<!-- Where apps keep their settings, floating as there is no navigation -->
 		<NcButton
+			v-if="hasSettings"
 			class="viewer__settings"
 			variant="tertiary"
 			:aria-label="t('Viewer settings')"
@@ -354,6 +355,7 @@ import { initHandlerElement } from '../utils/customElements.ts'
 import { restoreTitle, setViewerTitle } from '../utils/documentTitle.ts'
 import { emittedValue, toError } from '../utils/handlerEvents.ts'
 import { t } from '../utils/l10n.ts'
+import { isLegacyServer } from '../utils/legacyServer.ts'
 import { blurhash, fitInto, photoSize } from '../utils/photoMetadata.ts'
 import { renameFile } from '../utils/rename.ts'
 import { getViewer } from '../viewer.ts'
@@ -792,11 +794,14 @@ useHotKey('e', (event) => {
 		editing.value = true
 	}
 }, { ctrl: true, allowInModal: true })
-// The settings, which list these shortcuts, on ? as in the Files app
+// The settings, which list these shortcuts, on ? as in the Files app. Not on
+// a server older than the library, which has a viewer of its own and keeps
+// none of them
+const hasSettings = !isLegacyServer()
 const settingsOpen = ref(false)
 const { slideshowDelay } = useViewerSettings()
 useHotKey('?', (event) => {
-	if (currentFile.value === undefined || editing.value) {
+	if (!hasSettings || currentFile.value === undefined || editing.value) {
 		return
 	}
 	event.preventDefault()

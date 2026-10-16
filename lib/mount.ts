@@ -9,6 +9,7 @@ import { registerImageCustomElement } from './models/images.ts'
 import { registerSheetmusicCustomElement } from './models/sheetmusic.ts'
 import { registerVideoCustomElement } from './models/videos.ts'
 import { logger } from './services/logger.ts'
+import { isLegacyServer } from './utils/legacyServer.ts'
 import { getViewer } from './viewer.ts'
 
 /**
@@ -38,4 +39,8 @@ export async function mount(): Promise<void> {
 	const ViewerInstance = ViewerApp.mount(ViewerRoot)
 	getViewer()._setViewer(ViewerInstance as InstanceType<typeof Viewer>)
 	logger.info('Viewer mounted', { ViewerInstance })
+
+	if (isLegacyServer()) {
+		logger.warn('@nextcloud/viewer is made for Nextcloud 36 and later. This server is older and has a viewer of its own, so Files may open either one, some handlers are missing, and the viewer has no settings. See "Nextcloud 35 and older" in the README of @nextcloud/viewer.')
+	}
 }

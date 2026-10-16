@@ -502,6 +502,27 @@ renders one element with `file`, `files: [base, file]` and
 `comparison: 'differences'`. `compare(file, base, { view: 'differences' })`
 opens on it. The view chosen is kept until the viewer closes.
 
+### 🕰️ Nextcloud 35 and older
+
+The library is made for Nextcloud 36, whose server ships a copy of it. Older
+servers still ship the viewer app, and the library runs next to it. Checked on
+35.0.2:
+
+- Call `registerDefaultHandlers()` yourself: nothing else registers the
+  handlers for images, video and audio there.
+- Pictures, videos and sounds open in this library's viewer, from your app and
+  from the Files list, where its action comes first.
+- The viewer app stays enabled, with its own `OCA.Viewer` and Files action. The
+  handlers other apps register with `OCA.Viewer` are not this library's.
+- Types that need a server preview, like HEIC and TIFF, are not offered: the
+  server has no `core.previews.enabled_providers` capability yet.
+- The viewer has no settings button, and `?` does not open them: there is no
+  server side to keep them on.
+
+> [!WARNING]
+> Two viewers on one page is not a supported setup. The library logs a warning
+> when it finds the viewer app, and only images, video and audio were checked.
+
 ### 🧭 Migrating from `OCA.Viewer`
 
 The `OCA.Viewer` global is gone. Everything is imported from the
