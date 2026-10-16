@@ -562,6 +562,24 @@ describe('the viewer settings', () => {
 		await open(wrapper)
 		await vi.waitFor(() => expect(wrapper.findComponent({ name: 'ViewerSettings' }).exists()).toBe(true))
 	})
+
+	// Nextcloud 35 and older, with the viewer app still on the page
+	it('are not offered on a server older than the library', async () => {
+		window.OCA = { Viewer: { registerHandler: () => {} } }
+		try {
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg' })
+			await vm.open([file], file)
+			await wrapper.vm.$nextTick()
+			expect(wrapper.find('.viewer__settings').exists()).toBe(false)
+
+			document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true, cancelable: true }))
+			await flushPromises()
+			expect(wrapper.findComponent({ name: 'ViewerSettings' }).exists()).toBe(false)
+		} finally {
+			delete window.OCA
+		}
+	})
 })
 
 describe('Viewer sidebar', () => {

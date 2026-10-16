@@ -30,6 +30,16 @@ declare global {
 	const __TRANSLATIONS_EAGER__: import('./utils/l10n.ts').Catalog[]
 
 	interface Window {
+		OC?: {
+			config?: {
+				version?: string
+			}
+		}
+		OCA?: {
+			Viewer?: {
+				registerHandler?: unknown
+			}
+		}
 		OCP?: {
 			Files?: {
 				Router?: OCPFilesRouter
