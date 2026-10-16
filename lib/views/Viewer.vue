@@ -2051,8 +2051,10 @@ defineExpose<ViewerAPI>({
 	color: var(--color-text-maxcontrast);
 }
 
-// Bottom left, where an app keeps its settings in its navigation
-.viewer__settings {
+// Bottom left, where an app keeps its settings in its navigation. Over
+// NcButton's own position by specificity, as its stylesheet may come after
+// this one in the app bundling the library.
+.button-vue.viewer__settings {
 	position: fixed;
 	inset-block-end: calc(2 * var(--default-grid-baseline));
 	inset-inline-start: calc(2 * var(--default-grid-baseline));
