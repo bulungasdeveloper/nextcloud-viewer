@@ -18,6 +18,10 @@ interface Fixture {
 	mime: string
 	/** Where it sits under the user's folder, its name by default */
 	path?: string
+	/** The token of the public share it is reached through, rather than the user's folder */
+	share?: string
+	/** Given by the share's link rather than its WebDAV address, in this folder of the share */
+	shareLinkFolder?: string
 	/** Whether the viewer offers its editor for this one */
 	editable?: boolean
 	/** Whether the share this file came from forbids downloading it */
@@ -42,6 +46,9 @@ const startSlideshow = flags.has('slideshow')
 // Some of the fixtures again, under names that break a path escaped wrong.
 // Nothing is served there: the test answers for them.
 const withOddNames = flags.has('oddnames')
+// A picture from a public share, as Talk hands a guest. Nothing is served
+// there either: the test answers for it
+const withShared = flags.has('shared')
 
 const fixtures: Fixture[] = [
 	{ name: 'photo.jpg', mime: 'image/jpeg', editable: true, metadata: { blurhash: 'LODQZ:oNEew}}bWoJ5soExS1bFoM', size: { width: 3500, height: 2335 } } },
@@ -87,6 +94,13 @@ const fixtures: Fixture[] = [
 	...(withOddNames
 		? ODD_FIXTURES.map(({ name, mime }) => ({ name: oddFileName(name), mime, path: `${oddFolderName(name)}/${oddFileName(name)}` }))
 		: []),
+	...(withShared
+		? [
+				{ name: 'shared.jpg', mime: 'image/jpeg', hasPreview: true, share: 'sharetoken' },
+				// As Talk hands a guest a file in its folder share
+				{ name: 'shared-link.jpg', mime: 'image/jpeg', hasPreview: true, share: 'linktoken', shareLinkFolder: '/holiday' },
+			]
+		: []),
 ]
 
 /** Where the fixtures are served from, shaped like a WebDAV path */
@@ -107,9 +121,17 @@ const DAV = '/remote.php/dav/files/playground'
  */
 const nodes: IFile[] = fixtures.map((fixture, index) => new File({
 	// Not encoded, as Files has them: the viewer encodes what it requests
-	source: `${window.location.origin}${DAV}/${fixture.path ?? fixture.name}`,
-	root: '/files/playground',
-	owner: 'playground',
+	source: fixture.shareLinkFolder
+		? `${window.location.origin}/index.php/s/${fixture.share}/download/${fixture.name}?path=${fixture.shareLinkFolder}`
+		: fixture.share
+			? `${window.location.origin}/public.php/dav/files/${fixture.share}/${fixture.name}`
+			: `${window.location.origin}${DAV}/${fixture.path ?? fixture.name}`,
+	root: fixture.shareLinkFolder
+		? `/index.php/s/${fixture.share}`
+		: fixture.share ? `/files/${fixture.share}` : '/files/playground',
+	// A link ends in its query, not in the file's name
+	displayname: fixture.shareLinkFolder ? fixture.name : undefined,
+	owner: fixture.share ? null : 'playground',
 	id: index + 1,
 	mime: fixture.mime,
 	mtime: new Date('2026-01-01T00:00:00Z'),
@@ -153,7 +175,7 @@ if (compared?.length === 2 && compared[0] && compared[1]) {
 		<ul class="playground__files">
 			<li v-for="node in nodes" :key="node.source">
 				<button type="button" @click="open(node)">
-					{{ node.basename }}
+					{{ node.displayname }}
 					<span class="playground__mime">{{ node.mime }}</span>
 				</button>
 			</li>

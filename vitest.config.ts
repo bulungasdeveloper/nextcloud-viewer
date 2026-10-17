@@ -18,7 +18,7 @@ export default async (env) => {
 					inline: [/@nextcloud\/vue/, /@nextcloud\/dialogs/],
 				},
 			},
-			setupFiles: ['./__tests__/setup.ts'],
+			setupFiles: ['./__tests__/setupUser.ts', './__tests__/setup.ts'],
 			// Playwright specs in e2e/ have their own runner
 			include: ['__tests__/**/*.spec.ts'],
 			coverage: {

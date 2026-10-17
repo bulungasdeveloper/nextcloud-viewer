@@ -35,6 +35,64 @@ test.describe('Previews', () => {
 		expect(url.searchParams.get('etag')).toBe('etag-2')
 	})
 
+	// A guest of a Talk conversation, say: /core/preview only answers someone
+	// logged in, and would refuse them with a 401
+	test('shows a guest the file itself rather than asking a preview they cannot have', async ({ page }) => {
+		const requests: string[] = []
+		await page.route('**/core/preview*', async (route) => {
+			requests.push(route.request().url())
+			await route.fulfill({ status: 401 })
+		})
+
+		const viewer = new ViewerPage(page)
+		await viewer.open('previewed.jpg', 'previews&guest')
+		await viewer.waitForOpen()
+
+		await expect(viewer.container.locator('img').first()).toHaveAttribute('src', /previewed\.jpg$/)
+		expect(requests).toHaveLength(0)
+	})
+
+	// A guest of a Talk conversation opening a picture from the share Talk
+	// keeps it in: the share's previews are the ones a guest can have
+	test('asks a guest the preview of the share a file comes from', async ({ page }) => {
+		const requests: string[] = []
+		await page.route('**/apps/files_sharing/publicpreview/**', async (route) => {
+			requests.push(route.request().url())
+			await route.fulfill({ contentType: 'image/jpeg', body: IMAGE })
+		})
+		await page.route('**/core/preview*', (route) => route.fulfill({ status: 401 }))
+
+		const viewer = new ViewerPage(page)
+		await viewer.open('shared.jpg', 'shared&guest')
+		await viewer.waitForOpen()
+		await expect(viewer.container.locator('img').first()).toBeVisible()
+
+		// Then its neighbour's, preloaded
+		const url = new URL(requests[0]!)
+		expect(url.pathname).toContain('/apps/files_sharing/publicpreview/sharetoken')
+		expect(url.searchParams.get('file')).toBe('/shared.jpg')
+	})
+
+	// The same from the share's link, as Talk hands a guest a file in the
+	// folder it shares with a conversation: found by its path in the share
+	test('asks a guest the preview of the share a link points into', async ({ page }) => {
+		const requests: string[] = []
+		await page.route('**/apps/files_sharing/publicpreview/**', async (route) => {
+			requests.push(route.request().url())
+			await route.fulfill({ contentType: 'image/jpeg', body: IMAGE })
+		})
+		await page.route('**/core/preview*', (route) => route.fulfill({ status: 401 }))
+
+		const viewer = new ViewerPage(page)
+		await viewer.open('shared-link.jpg', 'shared&guest')
+		await viewer.waitForOpen()
+		await expect(viewer.container.locator('img').first()).toBeVisible()
+
+		const url = new URL(requests[0]!)
+		expect(url.pathname).toContain('/apps/files_sharing/publicpreview/linktoken')
+		expect(url.searchParams.get('file')).toBe('/holiday/shared-link.jpg')
+	})
+
 	test('asks for the preview by hand when the share forbids downloading', async ({ page }) => {
 		// The server refuses a plain request for the preview of a share that
 		// cannot be downloaded, and serves it when the request says it comes

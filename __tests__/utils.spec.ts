@@ -4,6 +4,7 @@
  */
 import type { File as NcFile } from '@nextcloud/files'
 
+import { getCurrentUser } from '@nextcloud/auth'
 import { File } from '@nextcloud/files'
 import { isPublicShare } from '@nextcloud/sharing/public'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -19,6 +20,11 @@ vi.mock('@nextcloud/router', () => ({
 	generateUrl: vi.fn((url: string) => url),
 }))
 
+// Someone logged in, unless a test says otherwise
+vi.mock('@nextcloud/auth', () => ({
+	getCurrentUser: vi.fn(() => ({ uid: 'alice', displayName: 'Alice', isAdmin: false })),
+}))
+
 // Public share helpers used by previewUtils.
 vi.mock('@nextcloud/sharing/public', () => ({
 	isPublicShare: vi.fn(() => false),
@@ -28,6 +34,7 @@ vi.mock('@nextcloud/sharing/public', () => ({
 describe('previewUtils.getPreviewIfAny', () => {
 	beforeEach(() => {
 		vi.mocked(isPublicShare).mockReturnValue(false)
+		vi.mocked(getCurrentUser).mockReturnValue({ uid: 'alice', displayName: 'Alice', isAdmin: false })
 		// Deterministic viewport so the generated x/y params are stable.
 		vi.stubGlobal('devicePixelRatio', 2)
 		vi.stubGlobal('screen', { width: 1000, height: 800 })
@@ -130,6 +137,56 @@ describe('previewUtils.getPreviewIfAny', () => {
 			attributes: { hasPreview: true },
 		})
 		expect(getPreviewIfAny(file)).toContain('file=/holiday/beach%20day.jpg&')
+	})
+
+	// A guest of a Talk conversation, say: no Files share page, but the file
+	// comes from a share, and its address carries the token
+	it('asks the share a file comes from, on a page that is not a share', () => {
+		vi.mocked(getCurrentUser).mockReturnValue(null)
+		const file = new File({
+			id: 98,
+			source: 'https://cloud.example.com/public.php/dav/files/talk-token/holiday/beach.jpg',
+			root: '/files/talk-token',
+			mime: 'image/jpeg',
+			owner: null,
+			attributes: { hasPreview: true },
+		})
+		expect(getPreviewIfAny(file)).toContain('/apps/files_sharing/publicpreview/talk-token?file=/holiday/beach.jpg&')
+	})
+
+	// A file shared alone is the share's root, with nothing after the token
+	it('asks the share of a file shared alone', () => {
+		vi.mocked(getCurrentUser).mockReturnValue(null)
+		const file = new File({
+			id: 97,
+			source: 'https://cloud.example.com/public.php/dav/files/talk-token',
+			root: '/files/talk-token',
+			mime: 'image/jpeg',
+			owner: null,
+			attributes: { hasPreview: true },
+		})
+		expect(getPreviewIfAny(file)).toContain('/apps/files_sharing/publicpreview/talk-token?')
+	})
+
+	// The links Talk hands a guest: a share for each file, or one folder
+	// share whose files, at its top or in a subfolder, are found by path
+	it.each([
+		['a file shared alone, or at the top of a shared folder', 'https://cloud.example.com/index.php/s/talk-token/download/beach.jpg', 'file=/beach.jpg&'],
+		['a file in a subfolder of a shared folder', 'https://cloud.example.com/index.php/s/talk-token/download/beach.jpg?path=/holiday', 'file=/holiday/beach.jpg&'],
+	])('asks the share of %s, from its link', (_, source, file) => {
+		vi.mocked(getCurrentUser).mockReturnValue(null)
+		const node = new File({ id: 96, source, root: '/index.php/s/talk-token', mime: 'image/jpeg', owner: null, attributes: { hasPreview: true } })
+		const url = getPreviewIfAny(node)
+		expect(url).toContain('/apps/files_sharing/publicpreview/talk-token?')
+		expect(url).toContain(file)
+	})
+
+	// The previews of /core/preview are only for someone logged in
+	it('shows a guest the file itself rather than asking a preview they cannot have', () => {
+		vi.mocked(getCurrentUser).mockReturnValue(null)
+		const file = makeFileWithAttributes({ hasPreview: true })
+		expect(getPreviewIfAny(file)).toBe(file.encodedSource)
+		expect(getLargestPreview(file)).toBeUndefined()
 	})
 
 	it('falls back to the file source when there is no preview', () => {

@@ -4,10 +4,17 @@
 -->
 <!DOCTYPE html>
 <html>
-	<head>
+	<!-- Logged in as the owner of the files listed, as the server renders a page -->
+	<head data-user="playground" data-user-displayname="Playground">
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1.0">
 		<title>@nextcloud/viewer playground</title>
+		<!-- ?guest: nobody logged in, outside a share. Before any module reads it -->
+		<script>
+			if (new URLSearchParams(location.search).has('guest')) {
+				document.head.removeAttribute('data-user')
+			}
+		</script>
 	</head>
 	<body>
 		<div id="app"></div>

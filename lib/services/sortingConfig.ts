@@ -4,6 +4,7 @@
  */
 import type { FilesSortingOptions } from '@nextcloud/files'
 
+import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { isPublicShare } from '@nextcloud/sharing/public'
@@ -23,11 +24,12 @@ const MODES: Record<string, string> = { mtime: 'lastmod' }
  * by name would step through the folder in an order the user did not
  * choose and cannot see, so ask the files list how it is sorted.
  *
- * A public share has no such config, and neither does a request that
- * fails: both fall back to what the files list itself falls back to.
+ * A public share has no such config, nor does a guest anywhere else, and
+ * neither does a request that fails: all fall back to what the files list
+ * itself falls back to.
  */
 export async function getSortingConfig(): Promise<FilesSortingOptions> {
-	if (isPublicShare()) {
+	if (isPublicShare() || getCurrentUser() === null) {
 		return DEFAULT
 	}
 

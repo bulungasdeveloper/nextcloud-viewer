@@ -5,9 +5,11 @@
 
 import type { IFile } from '@nextcloud/files'
 
+import { getCurrentUser } from '@nextcloud/auth'
 import { encodePath } from '@nextcloud/paths'
 import { generateUrl } from '@nextcloud/router'
 import { getSharingToken, isPublicShare } from '@nextcloud/sharing/public'
+import { publicShareOf } from './publicShare.ts'
 
 /** The space a preview has to fill, in CSS pixels */
 interface AvailableSpace {
@@ -130,14 +132,24 @@ function serverPreview(file: IFile, x: number, y: number): string | undefined {
 		// the same file and the preview is fetched again for nothing.
 		+ (file.attributes.etag ? `&etag=${String(file.attributes.etag).replace(/&quot;|"/g, '')}` : '')
 
-	if (file.attributes.hasPreview) {
-		// TODO: find a nicer standard way of doing this?
-		if (isPublicShare()) {
-			// The path inside the share: a folder share finds the file by
-			// it, and its name alone only matches one at the top of it
-			return generateUrl(`/apps/files_sharing/publicpreview/${getSharingToken()}?file=${encodePath(file.path)}&${searchParams}`)
-		}
-		return generateUrl(`/core/preview?${searchParams}`)
+	if (!file.attributes.hasPreview) {
+		return undefined
 	}
-	return undefined
+
+	// The path inside the share: a folder share finds the file by it, and
+	// its name alone only matches one at the top of it. A file share
+	// answers for the file shared, whatever the path
+	const share = publicShareOf(file)
+	if (share !== undefined) {
+		return generateUrl(`/apps/files_sharing/publicpreview/${share.token}?file=${encodePath(share.path)}&${searchParams}`)
+	}
+	if (isPublicShare()) {
+		return generateUrl(`/apps/files_sharing/publicpreview/${getSharingToken()}?file=${encodePath(file.path)}&${searchParams}`)
+	}
+	// Only answered for someone logged in. A guest is shown the file itself,
+	// which the page that showed it to them lets them read
+	if (getCurrentUser() === null) {
+		return undefined
+	}
+	return generateUrl(`/core/preview?${searchParams}`)
 }

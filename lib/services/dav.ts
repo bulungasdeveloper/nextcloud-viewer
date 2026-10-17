@@ -4,13 +4,37 @@
  */
 
 import type { IFile, IFolder } from '@nextcloud/files'
-import type { FileStat, ResponseDataDetailed } from 'webdav'
+import type { FileStat, ResponseDataDetailed, WebDAVClient } from 'webdav'
+import type { PublicShare } from '../utils/publicShare.ts'
 
 import { FileType, sortNodes } from '@nextcloud/files'
 import { getClient, getDefaultPropfind, resultToNode } from '@nextcloud/files/dav'
+import { publicShareOf } from '../utils/publicShare.ts'
 import { getSortingConfig } from './sortingConfig.ts'
 
 export const client = getClient()
+
+// The ones for the public shares a folder was reached through, by endpoint
+const shareClients = new Map<string, WebDAVClient>()
+
+/**
+ * The client to list a folder with: the page's, or the public shares' one
+ * for a folder in a share outside a Files share page, which the page's
+ * would ask as the logged-in user that a guest is not.
+ *
+ * @param share - The public share the folder is in, if it is in one
+ */
+function clientFor(share: PublicShare | undefined): WebDAVClient {
+	if (share === undefined) {
+		return client
+	}
+	let shareClient = shareClients.get(share.remoteURL)
+	if (shareClient === undefined) {
+		shareClient = getClient(share.remoteURL)
+		shareClients.set(share.remoteURL, shareClient)
+	}
+	return shareClient
+}
 
 /**
  * The list is ordered the way the user has their files list ordered. Callers
@@ -24,7 +48,10 @@ export const client = getClient()
  */
 export async function fetchFolderContent(folder: IFolder, signal?: AbortSignal): Promise<IFile[]> {
 	const propfindPayload = getDefaultPropfind()
-	const result = (await client.getDirectoryContents(`${folder.root}${folder.path}`, {
+	const share = publicShareOf(folder)
+	// Where a share's link leaves it, its WebDAV path
+	const path = share ? `/files/${share.token}${share.path === '/' ? '' : share.path}` : `${folder.root}${folder.path}`
+	const result = (await clientFor(share).getDirectoryContents(path, {
 		details: true,
 		data: propfindPayload,
 		signal,
