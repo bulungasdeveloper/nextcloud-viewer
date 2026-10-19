@@ -1,0 +1,13 @@
+diff --git a/.github/workflows/playwright.yml b/.github/workflows/playwright.yml
+index 5af7cf2..8df6116 100644
+--- a/.github/workflows/playwright.yml
++++ b/.github/workflows/playwright.yml
+@@ -54,7 +54,7 @@ jobs:
+       run: npx playwright install --with-deps
+ 
+     - name: Run Playwright tests
+-      run: npm run test:component -- --shard='${{ matrix.shardIndex }}/${{ matrix.shardTotal }}'
++      run: npm run test:e2e -- --shard='${{ matrix.shardIndex }}/${{ matrix.shardTotal }}'
+ 
+     - name: Upload blob report to GitHub Actions Artifacts
+       if: ${{ !cancelled() }}

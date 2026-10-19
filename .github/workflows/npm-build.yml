@@ -54,6 +54,12 @@ jobs:
           npm ci
           npm run build --if-present
 
+      - name: Check what importing the package costs
+        run: npm run check:size
+
+      - name: Check the published build asks nothing of the consumer's bundler
+        run: npm run check:imports
+
       - name: Check build changes
         run: |
           bash -c "[[ ! \"`git status --porcelain `\" ]] || (echo 'Please recompile and commit the assets, see the section \"Show changes on failure\" for details' && exit 1)"
