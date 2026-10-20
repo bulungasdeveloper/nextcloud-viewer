@@ -31,3 +31,46 @@ test('shows a picture as its blurhash, at its size, while it loads', async ({ pa
 	expect(Math.abs(picture.width - box.width)).toBeLessThanOrEqual(1)
 	expect(Math.abs(picture.height - box.height)).toBeLessThanOrEqual(1)
 })
+
+// It fades out over the picture rather than vanishing, and rather than next
+// to it, which had the picture jump into place once the blurhash was gone
+test('fades the blurhash out over the picture', async ({ page }) => {
+	await page.route('**/photo.jpg', async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 1500))
+		await route.continue()
+	})
+
+	const viewer = new ViewerPage(page)
+	await viewer.open('photo.jpg')
+	await expect(viewer.container.locator('.viewer__placeholder canvas')).toBeVisible()
+
+	// Every frame where both are on screen, until the blurhash is gone
+	const frames = await page.evaluate(() => new Promise<{ placeholder: DOMRect, picture: DOMRect, opacity: number }[]>((resolve) => {
+		const seen: { placeholder: DOMRect, picture: DOMRect, opacity: number }[] = []
+		const start = performance.now()
+		const frame = () => {
+			const overlay = document.querySelector<HTMLElement>('.viewer__loading')
+			const placeholder = document.querySelector('.viewer__placeholder')
+			const element = document.querySelector('oca-viewer-image')
+			const picture = element?.querySelector('img')
+			if (overlay && placeholder && picture && getComputedStyle(element!).display !== 'none') {
+				seen.push({ placeholder: placeholder.getBoundingClientRect(), picture: picture.getBoundingClientRect(), opacity: Number(getComputedStyle(overlay).opacity) })
+			}
+			if (!overlay && seen.length > 0) {
+				resolve(JSON.parse(JSON.stringify(seen)))
+			} else if (performance.now() - start < 10_000) {
+				requestAnimationFrame(frame)
+			} else {
+				resolve(seen)
+			}
+		}
+		frame()
+	}))
+
+	expect(frames.length).toBeGreaterThan(1)
+	expect(frames.at(-1)!.opacity).toBeLessThan(1)
+	for (const { placeholder, picture } of frames) {
+		expect(Math.abs(placeholder.x - picture.x)).toBeLessThanOrEqual(1)
+		expect(Math.abs(placeholder.y - picture.y)).toBeLessThanOrEqual(1)
+	}
+})
