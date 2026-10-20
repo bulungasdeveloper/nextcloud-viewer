@@ -521,6 +521,33 @@ describe('comparing two files', () => {
 		await wrapper.vm.$nextTick()
 		expect(elements(wrapper)).toHaveLength(2)
 	})
+
+	it('mounts the elements again when comparing other files', async () => {
+		const { vm, wrapper, current } = await compareTwo(false)
+		const before = elements(wrapper)
+
+		const newer = makeFile({ basename: 'newer.md' })
+		await vm.compare(newer, current)
+		await wrapper.vm.$nextTick()
+
+		const after = elements(wrapper)
+		expect(after).toHaveLength(2)
+		expect(after.some((element) => before.includes(element))).toBe(false)
+		expect(after.map((element) => element.file?.source)).toEqual([current.source, newer.source])
+	})
+
+	it('does not go back to loading when the same files are compared again', async () => {
+		const { vm, wrapper, current, older } = await compareTwo(false)
+		for (const element of elements(wrapper)) {
+			element.dispatchEvent(new CustomEvent('loaded'))
+		}
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+
+		await vm.compare(current, older)
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+	})
 })
 
 describe('the viewer settings', () => {

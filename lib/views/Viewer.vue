@@ -203,7 +203,7 @@
 			<component
 				:is="currentHandler?.tagName"
 				v-if="showsDifferences && currentFile && elementReady(currentHandler)"
-				key="differences"
+				:key="`differences-${comparisonKey}`"
 				:file="currentFile"
 				:files="comparedFiles"
 				comparison="differences"
@@ -218,6 +218,7 @@
 				<component
 					:is="comparisonHandler?.tagName"
 					v-if="comparisonFile && elementReady(comparisonHandler)"
+					:key="`before-${comparisonKey}`"
 					:file="comparisonFile"
 					:files="comparedFiles"
 					comparison="side-by-side"
@@ -230,6 +231,7 @@
 				<component
 					:is="currentHandler?.tagName"
 					v-if="currentFile && elementReady(currentHandler)"
+					:key="`after-${comparisonKey}`"
 					:file="currentFile"
 					:files="comparedFiles"
 					comparison="side-by-side"
@@ -480,9 +482,12 @@ const comparisonHandler = ref<IHandler>()
 const isComparing = computed(() => !!comparisonFile.value)
 // How the two files are compared, kept until the viewer closes
 const comparisonView = ref<ComparisonView>('side-by-side')
-// Both files, the older one compared with first, for each element to know
+// Both files compared, the older one first, for each element to know
 // what it is compared with
 const comparedFiles = computed(() => [comparisonFile.value, currentFile.value].filter((file) => file !== undefined))
+// An element is mounted again for every comparison, as it is for every file
+// in the single file view, so handlers can load in `onMounted`
+const comparisonKey = computed(() => comparedFiles.value.map((file) => file.source).join('\n'))
 // Only a handler showing both files can show what changed from one to the
 // other, and only for files it says it can
 const offerDifferences = computed(() => {
@@ -1348,7 +1353,6 @@ const compare: ViewerAPI['compare'] = async (file, base, options) => {
 async function showComparison(file1: IFile, file2: IFile, options?: CompareOptions): Promise<void> {
 	const handlerId = options?.handlerId
 	logger.debug('Comparing files', { file1, file2, options })
-	loading.value = true
 
 	if (handlerId && !getHandlers().has(handlerId)) {
 		logger.error('There is no handler matching the given handler ID')
@@ -1370,6 +1374,15 @@ async function showComparison(file1: IFile, file2: IFile, options?: CompareOptio
 		return
 	}
 
+	// Comparing what is already compared is not a new load, as with opening
+	// the file already open: the elements stay, and nothing would tell us
+	// they had loaded a second time
+	const wasShowingDifferences = showsDifferences.value
+	const isSameComparison = currentFile.value?.source === file1.source
+		&& comparisonFile.value?.source === file2.source
+		&& currentHandler.value?.id === handler1.id
+		&& comparisonHandler.value?.id === handler2.id
+
 	// Comparison mode has no navigation, so we reset the slideshow context
 	currentFileList.value = []
 	forcedHandler.value = undefined
@@ -1381,7 +1394,10 @@ async function showComparison(file1: IFile, file2: IFile, options?: CompareOptio
 	if (options?.view !== undefined) {
 		comparisonView.value = options.view
 	}
-	pendingLoads.value = showsDifferences.value ? 1 : 2
+	if (!isSameComparison || showsDifferences.value !== wasShowingDifferences) {
+		loading.value = true
+		pendingLoads.value = showsDifferences.value ? 1 : 2
+	}
 	// A failure to open something else earlier is not this comparison's
 	// problem, and the error is what the modal shows instead of the files.
 	errorString.value = null
