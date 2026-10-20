@@ -1070,9 +1070,10 @@ watch(editing, (value) => {
 
 const modalName = computed(() => {
 	if (isComparing.value) {
-		return t('Comparing {file1} and {file2}', {
-			file1: currentFile.value?.displayname ?? '',
-			file2: comparisonFile.value?.displayname ?? '',
+		// TRANSLATORS: Title of the viewer comparing two files, base being the older one
+		return t('Comparing {base} and {file}', {
+			base: comparisonFile.value?.displayname ?? '',
+			file: currentFile.value?.displayname ?? '',
 		})
 	}
 	return currentFile.value?.displayname || ''
