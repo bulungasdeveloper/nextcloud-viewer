@@ -8,7 +8,8 @@ import { decodesJxl, ViewerPage } from './support/viewer.ts'
 // The order the playground lists them in, which is the order the viewer is
 // handed and the order it has to step through. Images, video and audio
 // share the 'media' group, so they page into each other, as people keep
-// films, their posters and photos together
+// films and photos together. A film's poster is not stepped onto: the film
+// shows it already
 const MEDIA = [
 	'photo.jpg',
 	'gradient.jpg',
@@ -34,7 +35,6 @@ const MEDIA = [
 	'sound.aac',
 	'clip.webm',
 	'trailer.webm',
-	'trailer.jpg',
 	'photo-edited.jpg',
 	// Left out where the browser does not decode JPEG XL
 	'picture.jxl',
