@@ -211,7 +211,7 @@
 				:file="currentFile"
 				:files="comparedFiles"
 				comparison="differences"
-				:shown="!loading && !errorString"
+				:shown="fileShown"
 				:is-sidebar-shown="isSidebarShown"
 				:max-height="height"
 				:max-width="width"
@@ -240,7 +240,7 @@
 					:file="currentFile"
 					:files="comparedFiles"
 					comparison="side-by-side"
-					:shown="!loading && !errorString"
+					:shown="fileShown"
 					:is-sidebar-shown="isSidebarShown"
 					:max-height="height"
 					:max-width="(width - COMPARISON_GAP) / 2"
@@ -261,7 +261,7 @@
 			:file="currentFile"
 			:files="currentFileList"
 			:is-sidebar-shown="isSidebarShown"
-			:shown="!loading && !errorString"
+			:shown="fileShown"
 			:max-height="height"
 			:max-width="width"
 			:editing="editing"
@@ -1540,6 +1540,17 @@ function onError(reported: unknown) {
 	pendingLoads.value = 0
 	errorString.value = error.message
 }
+
+// Whether the file shown is on screen, for the handler's `shown`: set once the
+// update is through, as `v-show` only lifts its `display: none` at its end,
+// and a handler focusing its content on the change would focus nothing
+const fileShown = ref(false)
+watch(() => !loading.value && !errorString.value, async (shown) => {
+	if (shown) {
+		await nextTick()
+	}
+	fileShown.value = !loading.value && !errorString.value
+}, { immediate: true })
 
 // What had the keyboard when the viewer opened, given it back on close if
 // nothing else took it: a handler that focused its content before the modal's
