@@ -367,6 +367,7 @@ import { restoreTitle, setViewerTitle } from '../utils/documentTitle.ts'
 import { emittedValue, toError } from '../utils/handlerEvents.ts'
 import { t } from '../utils/l10n.ts'
 import { isLegacyServer } from '../utils/legacyServer.ts'
+import { videoPosters } from '../utils/livePhotoUtils.ts'
 import { blurhash, fitInto, photoSize } from '../utils/photoMetadata.ts'
 import { renameFile } from '../utils/rename.ts'
 import { getViewer } from '../viewer.ts'
@@ -1130,6 +1131,15 @@ function showFile(file: IFile) {
 	pendingLoads.value = 1
 }
 
+// The files stepped through: the list but the pictures a video of it uses as
+// its poster, which the video shows already. One opened on its own stays
+const steps = computed(() => {
+	const posters = videoPosters(currentFileList.value)
+	return posters.size === 0
+		? currentFileList.value
+		: currentFileList.value.filter((file) => !posters.has(file.source) || file.source === currentFile.value?.source)
+})
+
 /**
  * Where the file shown is in the list the viewer steps through.
  *
@@ -1142,7 +1152,7 @@ function showFile(file: IFile) {
  */
 function indexOfCurrent(): number {
 	const source = currentFile.value?.source
-	return source === undefined ? -1 : currentFileList.value.findIndex((file) => file.source === source)
+	return source === undefined ? -1 : steps.value.findIndex((file) => file.source === source)
 }
 
 const hasNext = computed(() => {
@@ -1154,13 +1164,13 @@ const hasNext = computed(() => {
 
 	// If we are not allowed to loop and we are at the end,
 	// we cannot go next
-	if (currentIndex < currentFileList.value.length - 1) {
+	if (currentIndex < steps.value.length - 1) {
 		return true
 	}
 
 	// If we are allowed to loop and we are at the end,
 	// we can go next if there is more than one file
-	if (canLoop && currentIndex === currentFileList.value.length - 1 && currentFileList.value.length > 1) {
+	if (canLoop && currentIndex === steps.value.length - 1 && steps.value.length > 1) {
 		return true
 	}
 
@@ -1181,7 +1191,7 @@ const hasPrevious = computed(() => {
 
 	// If we are allowed to loop and we are at the start,
 	// we can go previous if there is more than one file
-	if (canLoop && currentIndex === 0 && currentFileList.value.length > 1) {
+	if (canLoop && currentIndex === 0 && steps.value.length > 1) {
 		return true
 	}
 
@@ -1303,7 +1313,7 @@ async function showFiles(files: IFile[], file?: IFile, options?: ViewerOptions, 
 	// Open straight into edit mode when requested (e.g. from an `editing=true` URL).
 	editing.value = Boolean(options?.editing) && canEdit.value
 	// A slideshow of one file has nowhere to go
-	if (options?.startSlideshow && currentFileList.value.length > 1) {
+	if (options?.startSlideshow && steps.value.length > 1) {
 		slideshowRunning.value = true
 	}
 
@@ -1473,8 +1483,8 @@ function preloadNeighbors() {
 	}
 
 	const neighbors = [
-		currentFileList.value[currentIndex - 1],
-		currentFileList.value[currentIndex + 1],
+		steps.value[currentIndex - 1],
+		steps.value[currentIndex + 1],
 	].filter((f): f is IFile => Boolean(f))
 
 	for (const node of neighbors) {
@@ -1618,25 +1628,25 @@ async function next() {
 	let newIndex = currentIndex + 1
 
 	if (currentIndex === -1) {
-		logger.error('Current file not found in the file list', { currentFile: currentFile.value, fileList: currentFileList.value })
+		logger.error('Current file not found in the file list', { currentFile: currentFile.value, fileList: steps.value })
 		return
 	}
 
 	// If we are not allowed to loop and we are at the end, do nothing
-	if (!canLoop && currentIndex >= currentFileList.value.length - 1) {
+	if (!canLoop && currentIndex >= steps.value.length - 1) {
 		// We are at the end and cannot loop, do nothing
 		return
 	}
 
 	// If we are allowed to loop and we are at the end, go to the start
-	if (canLoop && newIndex >= currentFileList.value.length) {
+	if (canLoop && newIndex >= steps.value.length) {
 		newIndex = 0
 	}
 
-	const newFile = currentFileList.value[newIndex] as IFile
+	const newFile = steps.value[newIndex] as IFile
 	// Should not happen™, but just in case
 	if (!newFile) {
-		logger.error('Next file not found in the file list', { newIndex, fileList: currentFileList.value })
+		logger.error('Next file not found in the file list', { newIndex, fileList: steps.value })
 		return
 	}
 
@@ -1657,7 +1667,7 @@ let loadingMore = false
  */
 async function loadMoreAtEnd() {
 	const loadMore = currentOptions.value.loadMore
-	const isLast = currentFile.value !== undefined && indexOfCurrent() === currentFileList.value.length - 1
+	const isLast = currentFile.value !== undefined && indexOfCurrent() === steps.value.length - 1
 	if (loadMore === undefined || !isLast || loadingMore) {
 		return
 	}
@@ -1684,7 +1694,7 @@ function previous() {
 	let newIndex = currentIndex - 1
 
 	if (currentIndex === -1) {
-		logger.error('Current file not found in the file list', { currentFile: currentFile.value, fileList: currentFileList.value })
+		logger.error('Current file not found in the file list', { currentFile: currentFile.value, fileList: steps.value })
 		return
 	}
 
@@ -1696,13 +1706,13 @@ function previous() {
 
 	// If we are allowed to loop and we are at the start, go to the end
 	if (canLoop && newIndex < 0) {
-		newIndex = currentFileList.value.length - 1
+		newIndex = steps.value.length - 1
 	}
 
-	const newFile = currentFileList.value[newIndex] as IFile
+	const newFile = steps.value[newIndex] as IFile
 	// Should not happen™, but just in case
 	if (!newFile) {
-		logger.error('Previous file not found in the file list', { newIndex, fileList: currentFileList.value })
+		logger.error('Previous file not found in the file list', { newIndex, fileList: steps.value })
 		return
 	}
 

@@ -1927,3 +1927,51 @@ describe('the viewer\'s own Download and Delete', () => {
 		expect(axiosDelete).not.toHaveBeenCalled()
 	})
 })
+
+// A camera saves a picture next to its video, which the video shows as its
+// poster: stepping onto it showed the same thing twice
+describe('a video\'s poster', () => {
+	const media = () => [
+		imageHandler(),
+		makeHandler({ id: 'video', tagName: 'oca-viewer-compared', group: 'media', enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('video/')) }),
+	]
+	const folder = () => {
+		const video = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const poster = makeFile({ basename: 'clip.jpg', mime: 'image/jpeg' })
+		const after = makeFile({ basename: 'next.jpg', mime: 'image/jpeg' })
+		return { video, poster, after, files: [video, poster, after] }
+	}
+
+	it('is stepped over', async () => {
+		const { vm, wrapper, modalName, emitModal } = mountViewer(media())
+		const { video, files } = folder()
+		await vm.open(files, video, { canLoop: false })
+		await wrapper.vm.$nextTick()
+
+		await emitModal('next')
+		expect(modalName()).toBe('next.jpg')
+		await emitModal('previous')
+		expect(modalName()).toBe('clip.mp4')
+	})
+
+	it('is still handed to the video, which shows it', async () => {
+		const { vm, wrapper } = mountViewer(media())
+		const { video, poster, files } = folder()
+		await vm.open(files, video)
+		await wrapper.vm.$nextTick()
+
+		const shown = wrapper.find('oca-viewer-compared').element as ComparedElement
+		expect(shown.files?.map((file) => file.source)).toContain(poster.source)
+	})
+
+	it('is shown when opened itself', async () => {
+		const { vm, wrapper, modalName, emitModal } = mountViewer(media())
+		const { poster, files } = folder()
+		await vm.open(files, poster, { canLoop: false })
+		await wrapper.vm.$nextTick()
+		expect(modalName()).toBe('clip.jpg')
+
+		await emitModal('next')
+		expect(modalName()).toBe('next.jpg')
+	})
+})

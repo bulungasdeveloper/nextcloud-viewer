@@ -49,3 +49,23 @@ export function findLivePhotoPeerFromName(referenceFile: IFile, fileList: IFile[
 			&& (nameWithoutExtension(comparedFile) === name && livePictureExtRegex.test(comparedFile.basename))
 	})
 }
+
+/**
+ * The pictures of a list that a video of it uses as its poster: named like
+ * the video, as cameras save them. Not the picture of a live photo, which is
+ * the file itself and its video the part that moves.
+ *
+ * @param files - The list to look through
+ * @return Their sources
+ */
+export function videoPosters(files: IFile[]): Set<string> {
+	const videoNames = new Set(files.filter((file) => file.mime?.startsWith('video/')).map(nameWithoutExtension))
+	if (videoNames.size === 0) {
+		return new Set()
+	}
+	return new Set(files
+		.filter((file) => livePictureExtRegex.test(file.basename)
+			&& file.attributes?.['metadata-files-live-photo'] === undefined
+			&& videoNames.has(nameWithoutExtension(file)))
+		.map((file) => file.source))
+}

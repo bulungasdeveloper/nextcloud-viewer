@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
 	findLivePhotoPeerFromFileId,
 	findLivePhotoPeerFromName,
+	videoPosters,
 } from '../lib/utils/livePhotoUtils.ts'
 import { getLargestPreview, getPreviewIfAny } from '../lib/utils/previewUtils.ts'
 import { makeFile } from './factories.ts'
@@ -274,5 +275,33 @@ describe('livePhotoUtils.findLivePhotoPeerFromName', () => {
 		const exact = makeFile({ id: 3, basename: 'clip.jpg' })
 		expect(findLivePhotoPeerFromName(video, [video, longer])).toBeUndefined()
 		expect(findLivePhotoPeerFromName(video, [video, exact])).toBe(exact)
+	})
+})
+
+describe('livePhotoUtils.videoPosters', () => {
+	const sources = (posters: Set<string>, files: NcFile[]) => files.filter((file) => posters.has(file.source)).map((file) => file.basename)
+
+	it('is the picture named like a video next to it', () => {
+		const files = [
+			makeFile({ basename: 'clip.mp4', mime: 'video/mp4' }),
+			makeFile({ basename: 'clip.JPG', mime: 'image/jpeg' }),
+			makeFile({ basename: 'clip-2.jpg', mime: 'image/jpeg' }),
+			makeFile({ basename: 'beach.jpg', mime: 'image/jpeg' }),
+		]
+		expect(sources(videoPosters(files), files)).toEqual(['clip.JPG'])
+	})
+
+	it('is none without a video', () => {
+		const files = [makeFile({ basename: 'a.jpg', mime: 'image/jpeg' }), makeFile({ basename: 'a.png', mime: 'image/png' })]
+		expect(videoPosters(files).size).toBe(0)
+	})
+
+	// The picture is the live photo, its video the part that moves
+	it('is not the picture of a live photo', () => {
+		const files = [
+			makeFile({ basename: 'IMG_1.mov', mime: 'video/quicktime' }),
+			makeFile({ basename: 'IMG_1.jpg', mime: 'image/jpeg', attributes: { 'metadata-files-live-photo': 12 } }),
+		]
+		expect(videoPosters(files).size).toBe(0)
 	})
 })
