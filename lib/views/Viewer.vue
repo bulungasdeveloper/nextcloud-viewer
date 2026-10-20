@@ -211,6 +211,7 @@
 				:file="currentFile"
 				:files="comparedFiles"
 				comparison="differences"
+				:shown="!loading && !errorString"
 				:is-sidebar-shown="isSidebarShown"
 				:max-height="height"
 				:max-width="width"
@@ -239,6 +240,7 @@
 					:file="currentFile"
 					:files="comparedFiles"
 					comparison="side-by-side"
+					:shown="!loading && !errorString"
 					:is-sidebar-shown="isSidebarShown"
 					:max-height="height"
 					:max-width="(width - COMPARISON_GAP) / 2"
@@ -259,6 +261,7 @@
 			:file="currentFile"
 			:files="currentFileList"
 			:is-sidebar-shown="isSidebarShown"
+			:shown="!loading && !errorString"
 			:max-height="height"
 			:max-width="width"
 			:editing="editing"
@@ -1537,6 +1540,24 @@ function onError(reported: unknown) {
 	pendingLoads.value = 0
 	errorString.value = error.message
 }
+
+// What had the keyboard when the viewer opened, given it back on close if
+// nothing else took it: a handler that focused its content before the modal's
+// focus trap started left the trap nothing to give it back to
+let opener: HTMLElement | undefined
+watch(() => !!currentFile.value || !!errorString.value, async (shown) => {
+	if (shown) {
+		const active = document.activeElement
+		opener = active instanceof HTMLElement && active !== document.body ? active : undefined
+		return
+	}
+	const returnTo = opener
+	opener = undefined
+	await nextTick()
+	if (returnTo?.isConnected && (!document.activeElement || document.activeElement === document.body)) {
+		returnTo.focus({ preventScroll: true })
+	}
+}, { flush: 'sync' })
 
 // `update:canSwipe`, `update:editing` and `update:playing` are bound by hand rather than with
 // v-on. A handler is a custom element, so its emits leave as DOM events under

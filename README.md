@@ -238,6 +238,7 @@ const src = computed(() => props.file.encodedSource)
 | `maxWidth`       | `number`  | Max width of the viewer container               |
 | `editing`        | `boolean` | Whether the viewer is in editing mode           |
 | `isSidebarShown` | `boolean` | Whether the sidebar is shown                    |
+| `shown`          | `boolean` | Whether the file has loaded and is on screen. Focus your own content then, e.g. `watch(() => props.shown, (shown) => shown && editor.value?.focus())`. Optional |
 | `localSource`    | `string`  | An object URL to show instead of the file, e.g. right after an edit. Optional |
 | `turns`          | `number`  | Quarter turns the viewer asks you to show the file rotated by. Optional |
 | `comparison`     | `'side-by-side' \| 'differences'` | How the viewer compares `files`, see [comparing two files](#comparing-two-files). Optional |
@@ -260,6 +261,21 @@ it hands `waitUntil()`, and is cancelled with an error if that promise rejects.
 ```ts
 import type { ViewerBeforeDownloadDetail } from '@nextcloud/viewer'
 
+import { ref, useHost } from 'vue'
+
+// Edits made since the file was last written
+const dirty = ref(false)
+
+/**
+ * Write the edits to the file, e.g. with a PUT of its new content
+ */
+async function save(): Promise<void> {
+	// …
+	dirty.value = false
+}
+
+// In the component you hand to `defineCustomElement`: only that one has a
+// host, `useHost()` is null in its children
 useHost()!.addEventListener('before-download', (event) => {
 	if (dirty.value) {
 		(event as CustomEvent<ViewerBeforeDownloadDetail>).detail.waitUntil(save())
