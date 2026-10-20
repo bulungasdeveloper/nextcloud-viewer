@@ -141,6 +141,25 @@ test.describe('Rotation', () => {
 		}).toPass({ timeout: 5000 })
 	})
 
+	// Drawn turned, its box stayed tall: the viewer overflowed and showed
+	// a scrollbar, and the picture sat off centre
+	test('does not overflow the viewer with a tall picture turned', async ({ page }) => {
+		await captureWrites(page)
+		const viewer = new ViewerPage(page)
+		await viewer.open('portrait.jpg')
+		await viewer.waitForOpen()
+
+		await viewer.container.getByRole('button', { name: 'Rotate left' }).click()
+
+		const content = viewer.container.locator('.modal-container__content')
+		await expect.poll(() => content.evaluate((element) => element.scrollHeight - element.clientHeight)).toBe(0)
+		const frame = (await content.boundingBox())!
+		const image = (await viewer.container.locator('img').first().boundingBox())!
+		expect(image.width).toBeGreaterThan(image.height)
+		expect(Math.abs(image.x + image.width / 2 - (frame.x + frame.width / 2))).toBeLessThanOrEqual(1)
+		expect(Math.abs(image.y + image.height / 2 - (frame.y + frame.height / 2))).toBeLessThanOrEqual(1)
+	})
+
 	test('writes the new orientation to the file', async ({ page }) => {
 		const written = await captureWrites(page)
 		const viewer = new ViewerPage(page)

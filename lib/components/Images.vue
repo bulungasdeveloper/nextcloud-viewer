@@ -206,16 +206,18 @@ const alt = computed(() => props.file.displayname)
 const imgStyle = computed(() => {
 	// Anticlockwise, about the element's centre, so the picture stays put
 	const transform = turns.value === 0 ? undefined : `rotate(${-90 * turns.value}deg)`
-	if (zoomRatio.value === 1) {
-		return {
-			height: zoomHeight.value + 'px',
-			width: zoomWidth.value + 'px',
-			transform,
-		}
-	}
+	// A quarter turn draws the picture across the box it is laid out in:
+	// these margins give the box the size it is drawn at, or a tall picture
+	// turned overflowed the viewer and scrolled it
+	const inline = quarterTurned.value ? (zoomHeight.value - zoomWidth.value) / 2 : 0
+	const block = quarterTurned.value ? (zoomWidth.value - zoomHeight.value) / 2 : 0
+	// Panned while zoomed in
+	const shift = zoomRatio.value === 1 ? { x: 0, y: 0 } : { x: shiftX.value * 2, y: shiftY.value * 2 }
 	return {
-		marginTop: Math.round(shiftY.value * 2) + 'px',
-		marginLeft: Math.round(shiftX.value * 2) + 'px',
+		marginTop: Math.round(shift.y + block) + 'px',
+		marginBottom: Math.round(block) + 'px',
+		marginLeft: Math.round(shift.x + inline) + 'px',
+		marginRight: Math.round(inline) + 'px',
 		height: zoomHeight.value + 'px',
 		width: zoomWidth.value + 'px',
 		transform,
