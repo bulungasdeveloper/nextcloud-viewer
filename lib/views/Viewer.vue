@@ -264,6 +264,14 @@
 			@errored="onError" />
 		<!-- eslint-enable vue/attribute-hyphenation -->
 
+		<!-- A turn written to the file, said briefly in the corner -->
+		<Transition name="viewer__rotated">
+			<span v-if="rotationSaved" class="viewer__rotated" role="status">
+				<CheckIcon :size="20" />
+				<span class="viewer__rotated-label">{{ t('Rotation saved') }}</span>
+			</span>
+		</Transition>
+
 		<!-- Where apps keep their settings, floating as there is no navigation -->
 		<NcButton
 			v-if="hasSettings"
@@ -331,6 +339,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcModal from '@nextcloud/vue/components/NcModal'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import CheckIcon from 'vue-material-design-icons/Check.vue'
 import ChevronLeft from 'vue-material-design-icons/ChevronLeft.vue'
 import CogOutlineIcon from 'vue-material-design-icons/CogOutline.vue'
 import CompareHorizontalIcon from 'vue-material-design-icons/CompareHorizontal.vue'
@@ -575,8 +584,27 @@ const canEdit = computed(() => {
 const { canRotate, rotateLeft, turns } = useRotation(currentFile, (node) => {
 	if (node.fileid !== undefined && node.fileid === currentFile.value?.fileid) {
 		ownSaves.add(node.fileid)
+		showRotationSaved()
 	}
 })
+
+// How long the check that a turn was written stays, in milliseconds
+const ROTATION_SAVED_MS = 1200
+const rotationSaved = ref(false)
+let rotationSavedTimer: ReturnType<typeof setTimeout> | undefined
+onUnmounted(() => clearTimeout(rotationSavedTimer))
+
+/**
+ * Say briefly that the turn is in the file, as nothing else on screen
+ * changes once it is.
+ */
+function showRotationSaved() {
+	clearTimeout(rotationSavedTimer)
+	rotationSaved.value = true
+	rotationSavedTimer = setTimeout(() => {
+		rotationSaved.value = false
+	}, ROTATION_SAVED_MS)
+}
 
 // Rotating or editing a picture the user cannot see yet, or that failed to
 // show, would write changes to it blind
@@ -2076,6 +2104,38 @@ defineExpose<ViewerAPI>({
 // Bottom left, where an app keeps its settings in its navigation. Over
 // NcButton's own position by specificity, as its stylesheet may come after
 // this one in the app bundling the library.
+.viewer__rotated {
+	position: absolute;
+	inset-block-start: calc(2 * var(--default-grid-baseline));
+	inset-inline-end: calc(2 * var(--default-grid-baseline));
+	z-index: 10001;
+	display: flex;
+	padding: var(--default-grid-baseline);
+	border-radius: 50%;
+	background-color: var(--color-success);
+	color: var(--color-success-text);
+}
+
+// For screen readers only: the check says it on screen
+.viewer__rotated-label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.viewer__rotated-enter-active,
+.viewer__rotated-leave-active {
+	transition: opacity var(--animation-slow);
+}
+
+.viewer__rotated-enter-from,
+.viewer__rotated-leave-to {
+	opacity: 0;
+}
+
 .button-vue.viewer__settings {
 	position: fixed;
 	inset-block-end: calc(2 * var(--default-grid-baseline));
