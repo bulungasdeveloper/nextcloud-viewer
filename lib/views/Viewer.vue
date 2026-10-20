@@ -151,27 +151,30 @@
 			</template>
 		</template>
 
-		<!-- Loading overlay, shown on top of the (mounted but hidden) handler -->
-		<span
-			v-if="loading && !errorString"
-			class="viewer__loading"
-			:class="{ 'viewer__loading--placeholder': placeholder }">
-			<!-- The picture's colours, blurred, at the size it will take -->
+		<!-- Loading overlay, shown on top of the (mounted but hidden) handler.
+		     It fades out over the file once that is shown -->
+		<Transition name="viewer__loading">
 			<span
-				v-if="placeholder"
-				class="viewer__placeholder"
-				:style="{ width: `${placeholder.width}px`, height: `${placeholder.height}px` }">
-				<NcBlurHash :hash="placeholder.hash" />
+				v-if="loading && !errorString"
+				class="viewer__loading"
+				:class="{ 'viewer__loading--placeholder': placeholder }">
+				<!-- The picture's colours, blurred, at the size it will take -->
+				<span
+					v-if="placeholder"
+					class="viewer__placeholder"
+					:style="{ width: `${placeholder.width}px`, height: `${placeholder.height}px` }">
+					<NcBlurHash :hash="placeholder.hash" />
+				</span>
+				<NcLoadingIcon :appearance="lightBackdrop ? 'dark' : 'light'" :size="32" />
+				<span class="viewer__loading-hint" role="status">
+					<template v-if="slowLoading">{{ t('Still loading…') }}</template>
+				</span>
 			</span>
-			<NcLoadingIcon :appearance="lightBackdrop ? 'dark' : 'light'" :size="32" />
-			<span class="viewer__loading-hint" role="status">
-				<template v-if="slowLoading">{{ t('Still loading…') }}</template>
-			</span>
-		</span>
+		</Transition>
 
 		<!-- Error message -->
 		<NcEmptyContent
-			v-else-if="errorString"
+			v-if="errorString"
 			class="viewer__error"
 			:name="errorString"
 			:description="t('We were unable to display the requested file.')">
@@ -2065,6 +2068,16 @@ defineExpose<ViewerAPI>({
 		background-color: transparent !important;
 		box-shadow: none !important;
 	}
+}
+
+.viewer__loading.viewer__loading-leave-active {
+	// Over the file now shown, rather than next to it
+	position: absolute;
+	transition: opacity var(--animation-slow, 300ms);
+}
+
+.viewer__loading-leave-to {
+	opacity: 0;
 }
 
 .viewer__loading--placeholder {
