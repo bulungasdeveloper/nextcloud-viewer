@@ -27,6 +27,7 @@
 		<span class="image-differences__label image-differences__label--other">{{ other.displayname }}</span>
 
 		<input
+			ref="slider"
 			v-model.number="position"
 			class="image-differences__slider"
 			type="range"
@@ -44,7 +45,7 @@
 import type { IFile } from '@nextcloud/files'
 import type { ViewerEmits } from '../viewer.ts'
 
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { t } from '../utils/l10n.ts'
 import { getPreviewIfAny } from '../utils/previewUtils.ts'
 
@@ -55,9 +56,20 @@ const props = defineProps<{
 	maxWidth: number
 	/** The height to show them in */
 	maxHeight: number
+	/** Whether they have loaded and are on screen */
+	shown?: boolean
 }>()
 
 const emit = defineEmits<ViewerEmits>()
+
+// The slider takes the keyboard once both are on screen: the arrows move it,
+// as a comparison has no files to step through
+const slider = useTemplateRef<HTMLInputElement>('slider')
+watch(() => props.shown, (shown) => {
+	if (shown) {
+		slider.value?.focus({ preventScroll: true })
+	}
+})
 
 const base = computed(() => props.files[0]!)
 const other = computed(() => props.files[1]!)
