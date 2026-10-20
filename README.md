@@ -83,7 +83,8 @@ onMounted(async () => {
 ```
 
 Until `loaded` arrives the viewer shows its spinner, so don't forget it. The
-element is mounted again for every file, which is why `onMounted` is enough here.
+element is mounted again for every file, and when comparing for every two files
+compared, which is why `onMounted` is enough here.
 
 #### 3. Register it
 
@@ -501,6 +502,9 @@ the viewer offers a "Show differences" toggle in its header and on **D**, and
 renders one element with `file`, `files: [base, file]` and
 `comparison: 'differences'`. `compare(file, base, { view: 'differences' })`
 opens on it. The view chosen is kept until the viewer closes.
+
+`compare()` when viewer is already open compares the new files in it. Their
+elements are mounted again, as for every file opened.
 
 ### 🕰️ Nextcloud 35 and older
 
