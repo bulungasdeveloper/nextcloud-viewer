@@ -711,13 +711,14 @@ describe('Viewer preload', () => {
 describe('Viewer compare()', () => {
 	it('enters comparison mode with navigation disabled', async () => {
 		const { vm, wrapper, modalName, modalProps, modalHandlerId } = mountViewer([imageHandler()])
-		const f1 = makeFile({ basename: 'left.jpg', mime: 'image/jpeg' })
-		const f2 = makeFile({ basename: 'right.jpg', mime: 'image/jpeg' })
+		const newer = makeFile({ basename: 'new.jpg', mime: 'image/jpeg' })
+		const older = makeFile({ basename: 'old.jpg', mime: 'image/jpeg' })
 
-		await vm.compare(f1, f2)
+		await vm.compare(newer, older)
 		await wrapper.vm.$nextTick()
 
-		expect(modalName()).toBe('Comparing left.jpg and right.jpg')
+		// The older file first, as it is shown on the left
+		expect(modalName()).toBe('Comparing old.jpg and new.jpg')
 		expect(modalHandlerId()).toBe('image')
 		// Comparison has no navigation.
 		expect(modalProps().hasNext).toBe(false)
