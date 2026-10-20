@@ -404,16 +404,6 @@ watch(loading, (isLoading) => {
 }, { immediate: true })
 onUnmounted(() => clearTimeout(slowLoadingTimer))
 
-/**
- * Show the current file again after it failed: the handler is remounted
- * and gets a fresh start.
- */
-function retry() {
-	errorString.value = null
-	loading.value = true
-	pendingLoads.value = 1
-	reloadKey.value++
-}
 // Object URLs of freshly edited images, by source, shown without refetching.
 // Not by file id: every version of a file shares it, and an older version
 // would otherwise show the edit made to the current one.
@@ -486,8 +476,9 @@ const comparisonView = ref<ComparisonView>('side-by-side')
 // what it is compared with
 const comparedFiles = computed(() => [comparisonFile.value, currentFile.value].filter((file) => file !== undefined))
 // An element is mounted again for every comparison, as it is for every file
-// in the single file view, so handlers can load in `onMounted`
-const comparisonKey = computed(() => comparedFiles.value.map((file) => file.source).join('\n'))
+// in the single file view, so handlers can load in `onMounted`, and on a retry
+// or a new version of the file like the single file view's
+const comparisonKey = computed(() => [...comparedFiles.value.map((file) => file.source), reloadKey.value].join('\n'))
 // Only a handler showing both files can show what changed from one to the
 // other, and only for files it says it can
 const offerDifferences = computed(() => {
@@ -503,6 +494,17 @@ const offerDifferences = computed(() => {
 	}
 })
 const showsDifferences = computed(() => offerDifferences.value && comparisonView.value === 'differences')
+
+/**
+ * Show the current file again after it failed: the handler is remounted
+ * and gets a fresh start.
+ */
+function retry() {
+	errorString.value = null
+	loading.value = true
+	pendingLoads.value = isComparing.value && !showsDifferences.value ? 2 : 1
+	reloadKey.value++
+}
 
 /**
  * What to show of a picture while it loads: its blurhash, at the size it
