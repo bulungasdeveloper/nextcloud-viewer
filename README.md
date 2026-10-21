@@ -532,6 +532,27 @@ or a document, put a `<nc-viewer-file>` there, give it the file and a size:
 <nc-viewer-file :file.prop="file" style="width: 280px; height: 180px" />
 ```
 
+`<nc-viewer-file>` is a custom element, not a Vue component. In a Vue
+template, tell the compiler, or it tries to resolve it as a component and
+warns on every render:
+
+```ts
+// vite.config.ts
+vue({ template: { compilerOptions: { isCustomElement: (tag) => tag === 'nc-viewer-file' } } })
+```
+
+Where the build does not let you set that, as with `@nextcloud/vite-config`,
+render it as a dynamic component, which Vue renders as a plain element
+without resolving it:
+
+```vue
+<component :is="viewerFileTag" :file.prop="file" />
+```
+
+with `viewerFileTag = 'nc-viewer-file'` in the component's data or setup. A
+constant rather than a literal, which linters turn into a static `is`. Bind
+`file` with `.prop` either way: it is a DOM property, not an attribute.
+
 ```ts
 const element = document.createElement('nc-viewer-file')
 element.file = file
