@@ -242,6 +242,7 @@ const src = computed(() => props.file.encodedSource)
 | `localSource`    | `string`  | An object URL to show instead of the file, e.g. right after an edit. Optional |
 | `turns`          | `number`  | Quarter turns the viewer asks you to show the file rotated by. Optional |
 | `comparison`     | `'side-by-side' \| 'differences'` | How the viewer compares `files`, see [comparing two files](#comparing-two-files). Optional |
+| `embedded`       | `boolean` | Shown inline by a `<nc-viewer-file>`, outside the viewer: start read-only, no autoplay. You may offer your own switch to editing there. Optional |
 
 `ViewerEmits` lets you emit:
 

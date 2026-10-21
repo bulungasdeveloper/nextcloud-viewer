@@ -85,10 +85,11 @@ export interface ViewerProps {
 	comparison?: ComparisonView
 
 	/**
-	 * Whether the file is shown inline, outside the viewer, as the preview of a
-	 * link to it (see `getViewer().elementFor()`). A hint that handlers should
-	 * not take over the page, for example by autoplaying. Editing is usually
-	 * better left to the viewer, which the caller can open on the file.
+	 * Whether the file is shown inline, outside the viewer, by a
+	 * `<nc-viewer-file>` as the preview of a link to it. Start read-only and
+	 * do not take over the page: no autoplay, no focus taken. A handler may
+	 * offer its own way to switch to editing inline, as Text does; the full
+	 * viewer, editing included, is one click away from the element's menu.
 	 */
 	embedded?: boolean
 }
