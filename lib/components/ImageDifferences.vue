@@ -4,7 +4,10 @@
 -->
 
 <template>
-	<figure class="image-differences" :style="{ width: `${box.width}px`, height: `${box.height}px` }">
+	<figure
+		class="image-differences"
+		:class="{ 'image-differences--touched': touched }"
+		:style="{ width: `${box.width}px`, height: `${box.height}px` }">
 		<img
 			class="image-differences__image"
 			:alt="base.displayname"
@@ -29,7 +32,10 @@
 			type="range"
 			min="0"
 			max="100"
-			:aria-label="t('Slide to compare {base} with {other}', { base: base.displayname, other: other.displayname })">
+			:aria-label="t('Slide to compare {base} with {other}', { base: base.displayname, other: other.displayname })"
+			@pointerdown="touched = true"
+			@pointerup="touched = false"
+			@pointercancel="touched = false">
 		<span class="image-differences__divider" :style="{ insetInlineStart: `${position}%` }" />
 	</figure>
 </template>
@@ -75,6 +81,9 @@ const box = computed(() => {
 // Where the slider is, in percent from the start: the base shows before it,
 // the other file after it
 const position = ref(50)
+// A finger on the picture, which the names make way for as a pointer over it
+// does: they cover what is being compared
+const touched = ref(false)
 
 // Dragging the slider would otherwise be taken for a swipe
 onMounted(() => emit('update:canSwipe', false))
@@ -129,13 +138,22 @@ function onError() {
 
 	&__label {
 		position: absolute;
+		transition: opacity var(--animation-quick, 100ms);
 		top: calc(2 * var(--default-grid-baseline));
-		padding: var(--default-grid-baseline) calc(2 * var(--default-grid-baseline));
-		border-radius: var(--border-radius-small);
-		background-color: rgba(0, 0, 0, .6);
+		padding: calc(1.5 * var(--default-grid-baseline)) calc(3 * var(--default-grid-baseline));
+		border-radius: var(--border-radius-element, var(--border-radius-large));
+		// Readable on any picture, light or busy
+		background-color: rgba(0, 0, 0, .75);
 		color: #ffffff;
-		font-size: var(--font-size-small, 13px);
+		font-size: var(--default-font-size, 15px);
+		font-weight: bold;
+		line-height: 1.3;
 		pointer-events: none;
+		// Each on its half of the picture: two version dates on a narrow,
+		// tall picture ran into each other. Wrapping rather than cut, so the
+		// whole date still reads
+		box-sizing: border-box;
+		max-width: calc(50% - 3 * var(--default-grid-baseline));
 
 		&--base {
 			inset-inline-start: calc(2 * var(--default-grid-baseline));
@@ -143,6 +161,16 @@ function onError() {
 
 		&--other {
 			inset-inline-end: calc(2 * var(--default-grid-baseline));
+		}
+	}
+
+	&--touched &__label {
+		opacity: 0;
+	}
+
+	@media (hover: hover) {
+		&:hover &__label {
+			opacity: 0;
 		}
 	}
 
