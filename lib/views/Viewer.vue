@@ -1840,9 +1840,9 @@ watch(currentFile, (file) => {
 	if (file === undefined || visibleSidebar() === null) {
 		return
 	}
-	if (sidebarElement === null) {
-		onAppSidebarOpen()
-	}
+	// Also when the viewer heard it open while closed, and then left the
+	// sidebar its usual height for lack of a file shown
+	onAppSidebarOpen()
 	if (canOpenSidebar.value) {
 		followInSidebar(file)
 	}
