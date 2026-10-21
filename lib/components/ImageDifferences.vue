@@ -130,19 +130,20 @@ function onError() {
 	&__label {
 		position: absolute;
 		top: calc(2 * var(--default-grid-baseline));
-		padding: var(--default-grid-baseline) calc(2 * var(--default-grid-baseline));
-		border-radius: var(--border-radius-small);
-		background-color: rgba(0, 0, 0, .6);
+		padding: calc(1.5 * var(--default-grid-baseline)) calc(3 * var(--default-grid-baseline));
+		border-radius: var(--border-radius-element, var(--border-radius-large));
+		// Readable on any picture, light or busy
+		background-color: rgba(0, 0, 0, .75);
 		color: #ffffff;
-		font-size: var(--font-size-small, 13px);
+		font-size: var(--default-font-size, 15px);
+		font-weight: bold;
+		line-height: 1.3;
 		pointer-events: none;
 		// Each on its half of the picture: two version dates on a narrow,
-		// tall picture ran into each other
+		// tall picture ran into each other. Wrapping rather than cut, so the
+		// whole date still reads
 		box-sizing: border-box;
 		max-width: calc(50% - 3 * var(--default-grid-baseline));
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 
 		&--base {
 			inset-inline-start: calc(2 * var(--default-grid-baseline));
