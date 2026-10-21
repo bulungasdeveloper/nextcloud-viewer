@@ -131,6 +131,9 @@ export function registerImageHandler() {
 
 	registerHandler({
 		id: 'images',
+		// Defined when first needed: by the viewer as it mounts, or by a
+		// <nc-viewer-file> showing one of these files outside of it
+		onInit: registerImageCustomElement,
 		displayName: t('Images'),
 		tagName,
 		// With video and audio: a folder of photos and films pages through
