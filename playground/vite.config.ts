@@ -8,7 +8,7 @@ import { isVideojsElement } from '../build/videojsElements.ts'
 
 export default defineConfig({
 	root: import.meta.dirname,
-	plugins: [vue({ template: { compilerOptions: { isCustomElement: isVideojsElement } } })],
+	plugins: [vue({ template: { compilerOptions: { isCustomElement: (tag) => isVideojsElement(tag) || tag === 'nc-viewer-file' } } })],
 	define: {
 		// No bundled translations while serving the playground
 		__TRANSLATIONS__: '[]',

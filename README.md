@@ -242,6 +242,7 @@ const src = computed(() => props.file.encodedSource)
 | `localSource`    | `string`  | An object URL to show instead of the file, e.g. right after an edit. Optional |
 | `turns`          | `number`  | Quarter turns the viewer asks you to show the file rotated by. Optional |
 | `comparison`     | `'side-by-side' \| 'differences'` | How the viewer compares `files`, see [comparing two files](#comparing-two-files). Optional |
+| `embedded`       | `boolean` | Shown inline by a `<nc-viewer-file>`, outside the viewer: start read-only, no autoplay. You may offer your own switch to editing there. Optional |
 
 `ViewerEmits` lets you emit:
 
@@ -522,6 +523,36 @@ opens on it. The view chosen is kept until the viewer closes.
 `compare()` when viewer is already open compares the new files in it. Their
 elements are mounted again, as for every file opened.
 
+### 🖼️ Show a file outside the viewer
+
+To show a file where it is mentioned, as the preview of a file link in a chat
+or a document, put a `<nc-viewer-file>` there, give it the file and a size:
+
+```vue
+<nc-viewer-file :file.prop="file" style="width: 280px; height: 180px" />
+```
+
+```ts
+const element = document.createElement('nc-viewer-file')
+element.file = file
+container.append(element)
+```
+
+It shows the file with the handler the viewer would open it with, fitted to
+its box, and loads nothing of the viewer itself. While the file loads it
+shows its blurhash where the server has one. Over the file, a strip names it
+and offers to open it in the viewer or to download it, on hover, focus or a
+tap. A video waits behind its poster until played, and a sound waits too.
+
+When nothing can show the file, or it fails to, it says so and offers the
+download where the share allows it. Put something inside the element, such as
+a link of your own, to show that instead. It dispatches `loaded` and
+`errored`, as a handler does.
+
+To render the handler's element yourself, `getViewer().elementFor(file)`
+names it, once it is defined, or nothing when no handler takes the file.
+Give it the props of any handler (`ViewerProps`), with `embedded: true`.
+
 ### 🕰️ Nextcloud 35 and older
 
 The library is made for Nextcloud 36, whose server ships a copy of it. Older
@@ -561,7 +592,7 @@ instead, and the viewer works with `@nextcloud/files` nodes rather than the
 | `OCA.Viewer.close()`                              | `getViewer().close()`                                          |
 | `OCA.Viewer.mimetypes.includes(node.mime)`        | `canView(node)`                                                |
 | `OCA.Viewer.mimetypesCompare.includes(node.mime)` | `canView(node)`                                                |
-| `OCA.Viewer.availableHandlers`                    | `getHandlers()`, or `canView(node)` to test one file           |
+| `OCA.Viewer.availableHandlers`                    | `getHandlers()`, `canView(node)` to test one file, `getViewer().elementFor(node)` to render it |
 | `OCA.Viewer.registerHandler({ component })`       | `registerHandler({ tagName })`, see above                      |
 | `canCompare: true` on a handler                   | `canCompare: (nodes) => true`, and `canCompare(node)` to decide whether to offer it |
 | `\OCP\Util::addScript` for the registration        | `\OCP\Util::addInitScript`                                      |

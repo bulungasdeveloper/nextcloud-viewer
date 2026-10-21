@@ -16,3 +16,11 @@ body {
 .nc-select__dropdown.vs__dropdown-menu {
 	--vs-dropdown-z-index: 9999;
 }
+
+/* What the server's core/css/styles.scss resets on every page, which the
+ * menus of @nextcloud/vue count on */
+ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}

@@ -44,6 +44,9 @@ export async function registerVideoCustomElement(): Promise<void> {
 export function registerVideoHandler() {
 	registerHandler({
 		id: 'videos',
+		// Defined when first needed: by the viewer as it mounts, or by a
+		// <nc-viewer-file> showing one of these files outside of it
+		onInit: registerVideoCustomElement,
 		displayName: t('Video player'),
 		tagName,
 		supportsEndToEndEncryption: true,

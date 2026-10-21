@@ -163,6 +163,22 @@ const compared = flags.get('compare')?.split(',').map((name) => nodes.find((node
 if (compared?.length === 2 && compared[0] && compared[1]) {
 	getViewer().compare(compared[0], compared[1], { view: flags.get('view') === 'differences' ? 'differences' : 'side-by-side' })
 }
+
+// Files shown where they are mentioned, as the preview of a link in a chat:
+// `?embeds`. A file nothing shows, to see what is said instead, once with
+// the card the element makes and once with what the page puts inside
+const withEmbeds = flags.has('embeds')
+const report = new File({
+	source: `${window.location.origin}${DAV}/report.zip`,
+	root: '/files/playground',
+	mime: 'application/zip',
+	owner: 'playground',
+	size: 4404019,
+	permissions: Permission.READ,
+})
+const embeds = withEmbeds
+	? ['photo.jpg', 'trailer.webm', 'audio.mp3'].map((name) => nodes.find((node) => node.basename === name)!).concat(report)
+	: []
 </script>
 
 <template>
@@ -180,10 +196,39 @@ if (compared?.length === 2 && compared[0] && compared[1]) {
 				</button>
 			</li>
 		</ul>
+
+		<section v-if="withEmbeds" class="playground__embeds">
+			<h2>Shown where they are mentioned</h2>
+			<!-- eslint-disable vue/no-undef-components -- the custom element the library defines -->
+			<nc-viewer-file
+				v-for="node in embeds"
+				:key="node.source"
+				:file.prop="node"
+				class="playground__embed" />
+			<nc-viewer-file :file.prop="report" class="playground__embed playground__embed--own">
+				<a :href="report.source">{{ report.displayname }}</a>
+			</nc-viewer-file>
+			<!-- eslint-enable vue/no-undef-components -->
+		</section>
 	</main>
 </template>
 
 <style scoped>
+.playground__embeds {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, 280px);
+	gap: 1rem;
+}
+
+.playground__embeds h2 {
+	grid-column: 1 / -1;
+}
+
+.playground__embed {
+	width: 280px;
+	height: 180px;
+}
+
 .playground {
 	max-inline-size: 40rem;
 	margin: 0 auto;

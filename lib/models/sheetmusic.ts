@@ -46,6 +46,9 @@ export async function registerSheetmusicCustomElement(): Promise<void> {
 export function registerSheetmusicHandler() {
 	registerHandler({
 		id: 'sheetmusic',
+		// Defined when first needed: by the viewer as it mounts, or by a
+		// <nc-viewer-file> showing one of these files outside of it
+		onInit: registerSheetmusicCustomElement,
 		displayName: t('Sheet music'),
 		tagName,
 

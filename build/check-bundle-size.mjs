@@ -22,11 +22,15 @@ import { gzipSync } from 'node:zlib'
  * in it.
  */
 
-/** What the entry may cost, gzipped, before anyone has opened a file */
-const BUDGET_GZIP = 10 * 1024
+/**
+ * What the entry may cost, gzipped, before anyone has opened a file. Raised
+ * from 10 kB for <nc-viewer-file>, defined on every page, and the default
+ * handlers defining their elements when first needed
+ */
+const BUDGET_GZIP = 11 * 1024
 
 /** Chunks that must only ever be reached through a dynamic import */
-const MUST_BE_LAZY = ['mount', 'Images', 'Videos', 'Audios', 'ImageEditor', 'usePlyrPlayer', 'translations']
+const MUST_BE_LAZY = ['mount', 'mountViewerFile', 'Images', 'Videos', 'Audios', 'ImageEditor', 'usePlyrPlayer', 'translations']
 
 /**
  * Packages a page must not pay for unless it opens something needing them.

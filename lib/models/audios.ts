@@ -47,6 +47,9 @@ export async function registerAudioCustomElement(): Promise<void> {
 export function registerAudioHandler() {
 	registerHandler({
 		id: 'audios',
+		// Defined when first needed: by the viewer as it mounts, or by a
+		// <nc-viewer-file> showing one of these files outside of it
+		onInit: registerAudioCustomElement,
 		displayName: t('Audio player'),
 		tagName,
 		supportsEndToEndEncryption: true,
