@@ -9,6 +9,7 @@
 		<video-player ref="player" :poster="poster">
 			<video-skin
 				class="viewer-media"
+				tabindex="-1"
 				:style="{
 					height: height + 'px',
 					width: width + 'px',

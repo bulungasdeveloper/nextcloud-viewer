@@ -7,7 +7,7 @@
 	<!-- eslint-disable vue/no-unused-refs -- the player ref is consumed by useVideojsAdapter, the audio one by useMediaPlayer, via useTemplateRef -->
 	<media-i18n :lang="playerLanguage">
 		<audio-player ref="player">
-			<audio-skin class="viewer-media">
+			<audio-skin class="viewer-media" tabindex="-1">
 				<audio
 					ref="audio"
 					:autoplay="true"

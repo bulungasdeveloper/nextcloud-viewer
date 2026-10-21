@@ -15,3 +15,73 @@ test('exposes the viewer as a dialog named after the file, with named controls',
 	await expect(viewer.previousButton).toBeVisible()
 	await expect(viewer.closeButton).toBeVisible()
 })
+
+// nextcloud/viewer#860
+test('takes the keyboard on open, and gives it back on close', async ({ page }) => {
+	const viewer = new ViewerPage(page)
+	await page.goto('/')
+	const opener = page.getByRole('button', { name: 'gradient.jpg' })
+	await opener.focus()
+	await page.keyboard.press('Enter')
+	await viewer.waitForOpen()
+	await expect(viewer.container.locator(':focus')).toHaveCount(1)
+
+	await page.keyboard.press('ArrowRight')
+	await viewer.waitForOpen()
+	await page.keyboard.press('Escape')
+	await expect(viewer.container).toBeHidden()
+	await expect(opener).toBeFocused()
+})
+
+test('gives a video\'s player the keyboard, and the arrows still step through files', async ({ page }) => {
+	const viewer = new ViewerPage(page)
+	await viewer.open('video.mp4')
+	await viewer.waitForOpen()
+	const video = viewer.container.locator('video')
+	await expect(viewer.container.locator('video-skin')).toBeFocused()
+
+	await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(false)
+	await page.keyboard.press('Space')
+	await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true)
+
+	await page.keyboard.press('ArrowRight')
+	await expect.poll(() => viewer.currentName()).not.toBe('video.mp4')
+})
+
+test('gives an audio player the keyboard', async ({ page, browserName }) => {
+	// Whether a sound plays at all depends on the browser having a sound
+	// device, which Firefox in CI lacks: what is checked is that Space reached
+	// the player, which asks the sound to play or to pause
+	await page.addInitScript(() => {
+		const asked: string[] = []
+		Object.assign(window, { asked })
+		for (const method of ['play', 'pause'] as const) {
+			const original = HTMLMediaElement.prototype[method]
+			HTMLMediaElement.prototype[method] = function(this: HTMLMediaElement) {
+				asked.push(method)
+				return original.call(this) as never
+			}
+		}
+	})
+	const viewer = new ViewerPage(page)
+	await viewer.open('audio.mp3')
+	await viewer.waitForOpen()
+	await expect(viewer.container.locator('audio-skin')).toBeFocused()
+
+	// Firefox without a sound device, as in CI, cannot play the sound at
+	// all, and its player takes no shortcut then
+	test.skip(browserName === 'firefox', 'No sound device to play the sound on')
+	const asked = () => page.evaluate(() => (window as unknown as { asked: string[] }).asked.length)
+	const before = await asked()
+	await page.keyboard.press('Space')
+	await expect.poll(asked).toBeGreaterThan(before)
+})
+
+test('gives the differences slider the keyboard', async ({ page }) => {
+	await page.goto('/?compare=photo-edited.jpg,photo.jpg&view=differences')
+	const slider = page.locator('.image-differences__slider')
+	await expect(slider).toBeFocused()
+
+	await page.keyboard.press('ArrowRight')
+	await expect(slider).toHaveValue('51')
+})

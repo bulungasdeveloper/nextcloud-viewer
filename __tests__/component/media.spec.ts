@@ -537,6 +537,24 @@ describe('Videos.vue (smoke)', () => {
 	})
 })
 
+// Space, m, j and l reach the player: the arrows still step through the files
+describe('the keyboard, once the media is on screen', () => {
+	// The skin itself: the modal's focus trap would take back a focus in its
+	// shadow root
+	it.each([
+		['a video', Videos, 'video-skin', makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })],
+		['a sound', Audios, 'audio-skin', makeFile({ basename: 'song.mp3', mime: 'audio/mpeg' })],
+	])('goes to the player of %s', async (_name, component, focused, file) => {
+		const wrapper = mount(component, { props: makeProps({ file, files: [file], shown: false }), attachTo: document.body })
+		await flushPromises()
+		expect(document.activeElement).toBe(document.body)
+
+		await wrapper.setProps({ shown: true })
+		expect(document.activeElement).toBe(wrapper.find(focused).element)
+		wrapper.unmount()
+	})
+})
+
 describe('a video that has played to the end', () => {
 	// What a user puts beside a film to show before and after it plays:
 	// a picture of the same name in the same folder

@@ -28,6 +28,8 @@ export interface MediaPlayerAdapter {
 	onFullscreenChange(callback: (fullscreen: boolean) => void): void
 	/** The controls, which the pointer can be over, or none if not drawn yet */
 	controls(): Element[]
+	/** Give the player the keyboard, for its own shortcuts: Space, m, j, l… */
+	focus(): void
 }
 
 /**
@@ -46,6 +48,13 @@ export function useMediaPlayer(forAudio: boolean, props: ViewerProps, emit: Emit
 	useMediaVolume(computed(() => video.value ?? audio.value))
 
 	const fallback = ref(false)
+
+	// The arrows still step through the files: the viewer's
+	watch(() => props.shown, (shown) => {
+		if (shown) {
+			player.focus()
+		}
+	})
 
 	// Whether the element got as far as playing what it was given. The
 	// fallback is for a source that does not load: an error after this one

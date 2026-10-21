@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import ImageDifferences from '../../lib/components/ImageDifferences.vue'
 import Images from '../../lib/components/Images.vue'
@@ -87,5 +87,26 @@ describe('the names of the two, under a finger', () => {
 		await slider.trigger('pointerdown')
 		await slider.trigger('pointercancel')
 		expect(wrapper.classes()).not.toContain('image-differences--touched')
+	})
+})
+
+// The arrows move the slider: a comparison has no files to step through
+describe('the keyboard, once both images are on screen', () => {
+	it('goes to the slider', async () => {
+		const wrapper = mount(ImageDifferences, { props: { files: twoVersions(), maxWidth: 800, maxHeight: 600, shown: false }, attachTo: document.body })
+		expect(document.activeElement).toBe(document.body)
+
+		await wrapper.setProps({ shown: true })
+		expect(document.activeElement).toBe(wrapper.find('input[type="range"]').element)
+		wrapper.unmount()
+	})
+
+	it('is passed on by the image handler', async () => {
+		const files = twoVersions()
+		const wrapper = mount(Images, { props: { file: files[1]!, files, comparison: 'differences', maxWidth: 800, maxHeight: 600, editing: false, isSidebarShown: false, shown: true }, attachTo: document.body })
+		await flushPromises()
+
+		expect(wrapper.findComponent(ImageDifferences).props('shown')).toBe(true)
+		wrapper.unmount()
 	})
 })

@@ -52,6 +52,14 @@ export interface ViewerProps {
 	isSidebarShown: boolean
 
 	/**
+	 * Whether the file has loaded and is on screen, so it can take the
+	 * keyboard: a handler that wants its own content focused, an editor's
+	 * text say, focuses it then. Before, the element is still hidden. When
+	 * comparing, only the newer file's is.
+	 */
+	shown?: boolean
+
+	/**
 	 * Quarter turns anticlockwise the viewer is showing on top of the
 	 * file's own orientation, while a rotation is being written. Handlers
 	 * that can turn their content should honour it; the rest may ignore it.

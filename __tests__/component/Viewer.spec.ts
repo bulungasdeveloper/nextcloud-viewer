@@ -416,6 +416,7 @@ class ComparedElement extends HTMLElement {
 	file?: IFile
 	files?: IFile[]
 	comparison?: string
+	shown?: boolean
 }
 customElements.define('oca-viewer-compared', ComparedElement)
 
@@ -2049,5 +2050,69 @@ describe('a video\'s poster', () => {
 
 		await emitModal('next')
 		expect(modalName()).toBe('next.jpg')
+	})
+})
+
+// A handler that focuses its own content waits for this (nextcloud/viewer#860)
+describe('telling the file it is on screen', () => {
+	const handler = () => makeHandler({ id: 'compared', tagName: 'oca-viewer-compared', enabled: () => true })
+	const elements = (wrapper: VueWrapper) => wrapper.findAll('oca-viewer-compared').map((found) => found.element as ComparedElement)
+
+	it('waits for the file to load', async () => {
+		const { vm, wrapper } = mountViewer([handler()])
+		const file = makeFile()
+		await vm.open([file], file)
+		await flushPromises()
+		const [element] = elements(wrapper)
+		expect(element!.shown).toBe(false)
+
+		element!.dispatchEvent(new CustomEvent('loaded'))
+		await flushPromises()
+		expect(element!.shown).toBe(true)
+	})
+
+	it('is not while the file failed', async () => {
+		const { vm, wrapper } = mountViewer([handler()])
+		const file = makeFile()
+		await vm.open([file], file)
+		await flushPromises()
+		const [element] = elements(wrapper)
+		element!.dispatchEvent(new CustomEvent('errored', { detail: new Error('broken') }))
+		await flushPromises()
+		expect(element!.shown).toBe(false)
+	})
+
+	it('is only the newer file when comparing side by side', async () => {
+		const { vm, wrapper } = mountViewer([handler()])
+		const current = makeFile({ basename: 'current.md' })
+		await vm.compare(current, makeFile({ basename: 'older.md' }))
+		await flushPromises()
+		const [older, newer] = elements(wrapper)
+		older!.dispatchEvent(new CustomEvent('loaded'))
+		newer!.dispatchEvent(new CustomEvent('loaded'))
+		await flushPromises()
+
+		expect(older!.shown).toBeUndefined()
+		expect(newer!.shown).toBe(true)
+		expect(newer!.file?.source).toBe(current.source)
+	})
+
+	// A handler that took it early, before the modal's focus trap started,
+	// left the trap nothing to give it back to
+	it('gives the keyboard back to what opened the viewer', async () => {
+		const button = document.createElement('button')
+		document.body.append(button)
+		button.focus()
+		const { vm, wrapper, emitModal } = mountViewer([handler()])
+		const file = makeFile()
+		await vm.open([file], file)
+		await flushPromises()
+		const [element] = elements(wrapper)
+		element!.tabIndex = -1
+		element!.focus()
+
+		await emitModal('close')
+		await flushPromises()
+		expect(document.activeElement).toBe(button)
 	})
 })

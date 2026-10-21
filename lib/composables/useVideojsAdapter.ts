@@ -98,6 +98,13 @@ export function useVideojsAdapter() {
 			const controls = skin()?.querySelector('media-controls')
 			return controls ? [controls] : []
 		},
+
+		// The skin itself rather than its container: the modal's focus trap
+		// takes back a focus it finds in a shadow root before the trap has
+		// started. Its keys reach the player all the same
+		focus() {
+			player.value?.querySelector<HTMLElement>('video-skin, audio-skin')?.focus({ preventScroll: true })
+		},
 	}
 
 	return { ...adapter, stopped }

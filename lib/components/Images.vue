@@ -9,6 +9,7 @@
 		:files="files"
 		:maxWidth="maxWidth"
 		:maxHeight="maxHeight"
+		:shown="shown"
 		@loaded="emit('loaded')"
 		@errored="(error) => emit('errored', error)"
 		@update:canSwipe="(canSwipe) => emit('update:canSwipe', canSwipe)" />
