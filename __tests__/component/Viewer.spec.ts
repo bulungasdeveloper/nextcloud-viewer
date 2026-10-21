@@ -548,6 +548,38 @@ describe('comparing two files', () => {
 		await wrapper.vm.$nextTick()
 		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
 	})
+
+	// The elements stay mounted, hidden, while the error shows: only a new key
+	// mounts them again, and nothing else would tell the viewer they loaded
+	it('mounts both elements again on a retry, and waits for both', async () => {
+		const { wrapper } = await compareTwo(false)
+		const before = elements(wrapper)
+		before[0]!.dispatchEvent(new CustomEvent('errored', { detail: new Error('broken') }))
+		await wrapper.vm.$nextTick()
+
+		await wrapper.find('.nc-empty-content-stub button').trigger('click')
+		await wrapper.vm.$nextTick()
+		const after = elements(wrapper)
+		expect(after.some((element) => before.includes(element))).toBe(false)
+
+		after[0]!.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+		after[1]!.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+	})
+
+	it('mounts the elements again for another version of the file compared', async () => {
+		const { wrapper, current } = await compareTwo(false)
+		const before = elements(wrapper)
+
+		const updated = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:updated')![1] as (node: unknown) => void
+		updated(makeFile({ id: current.fileid, basename: 'current.md', attributes: { etag: 'newer' } }))
+		await wrapper.vm.$nextTick()
+
+		expect(elements(wrapper).some((element) => before.includes(element))).toBe(false)
+	})
 })
 
 describe('the viewer settings', () => {
