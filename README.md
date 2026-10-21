@@ -525,31 +525,32 @@ elements are mounted again, as for every file opened.
 ### 🖼️ Show a file outside the viewer
 
 To show a file where it is mentioned, as the preview of a file link in a chat
-or a document, ask the viewer which element shows it and render that element
-yourself:
+or a document, put a `<nc-viewer-file>` there, give it the file and a size:
 
-```ts
-import { getViewer } from '@nextcloud/viewer'
-
-const tagName = await getViewer().elementFor(file)
-if (tagName !== undefined) {
-	const element = document.createElement(tagName)
-	Object.assign(element, { file, files: [file], maxWidth: 600, maxHeight: 400, embedded: true })
-	element.addEventListener('loaded', () => { /* shown */ })
-	element.addEventListener('errored', () => { /* fall back to a plain link */ })
-	container.append(element)
-}
+```vue
+<nc-viewer-file :file.prop="file" style="width: 280px; height: 180px" />
 ```
 
-It names the element of the handler the viewer would open the file with, once
-that element is defined (a handler with `onInit()` is initialized first), and
-nothing when no handler takes the file or the user cannot read it. The element
-takes the props and emits the events of any handler (`ViewerProps`,
-`ViewerEmits`). Nothing of the viewer itself is loaded for it.
+```ts
+const element = document.createElement('nc-viewer-file')
+element.file = file
+container.append(element)
+```
 
-Set `embedded` so the handler knows it is shown inline: videos and sounds then
-wait to be played rather than starting on their own. Editing is usually better
-left to the viewer: offer a way to open the file there with `getViewer().open()`.
+It shows the file with the handler the viewer would open it with, fitted to
+its box, and loads nothing of the viewer itself. While the file loads it
+shows its blurhash where the server has one. Over the file, a strip names it
+and offers to open it in the viewer or to download it, on hover, focus or a
+tap. A video waits behind its poster until played, and a sound waits too.
+
+When nothing can show the file, or it fails to, it says so and offers the
+download where the share allows it. Put something inside the element, such as
+a link of your own, to show that instead. It dispatches `loaded` and
+`errored`, as a handler does.
+
+To render the handler's element yourself, `getViewer().elementFor(file)`
+names it, once it is defined, or nothing when no handler takes the file.
+Give it the props of any handler (`ViewerProps`), with `embedded: true`.
 
 ### 🕰️ Nextcloud 35 and older
 

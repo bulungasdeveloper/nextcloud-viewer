@@ -2,6 +2,7 @@
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import { defineViewerFileElement } from './elements/viewerFile.ts'
 import { registerImplementation } from './scope.ts'
 import { loadTranslations } from './utils/l10n.ts'
 import { getViewer } from './viewer.ts'
@@ -26,8 +27,13 @@ registerImplementation({
 // It is an empty shell until the viewer is mounted.
 getViewer()
 
+// <nc-viewer-file>, for a page to show a file where it is mentioned. Its view
+// is only fetched once one is on the page
+defineViewerFileElement()
+
 export { canCompare, canView, getHandlers, registerHandler } from './handlers.ts'
 export type { IHandler } from './handlers.ts'
+export type { ViewerFileElement } from './elements/viewerFile.ts'
 export { getViewer, Viewer } from './viewer.ts'
 export type { CompareOptions, ComparisonView, ViewerAPI, ViewerBeforeDownloadDetail, ViewerEmits, ViewerOptions, ViewerProps } from './viewer.ts'
 export type { ViewerEventMap, ViewerSession } from './session.ts'
