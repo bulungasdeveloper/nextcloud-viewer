@@ -23,10 +23,52 @@ All notable changes to this project will be documented in this file.
   (#141, nextcloud/viewer#2801)
 - A handler can set `canSlideshow: false` to keep the slideshow button off
   its files, as an editor would (#142)
+- A picture shows its blurhash, at the size it will take, while it loads,
+  where the server knows both, and the blurhash fades out over it once it is
+  there (#145, #159)
+- Handlers get a `shown` prop, true once their file has loaded and is on
+  screen, to focus their own content then. Videos and sounds give the
+  keyboard to their player, and the differences between two pictures to
+  their slider. On close, the keyboard goes back to what opened the viewer
+  (#156, nextcloud/viewer#860)
+- A check shows briefly once a turn of a picture is written to the file
+  (#158)
+- The names of two pictures compared fade out while the pointer is over
+  them or a finger holds the slider (#167)
+- `<nc-viewer-file>` shows a file where it is mentioned, as the preview of
+  a file link: give it a file and a size. It shows the file with the
+  handler the viewer would use, its blurhash while it loads, and a strip
+  naming it with a menu to open it in the viewer or download it. A video
+  waits behind its poster until played. When nothing can show the file, it
+  says so and offers the download, or shows what the page put inside it.
+  `getViewer().elementFor()` names a handler's element to render it
+  yourself, and handlers get `embedded` to start read-only there (#97)
+- On Nextcloud 35 and older, the library says what to expect in the
+  console, and leaves out the settings it could not keep there (#148)
+
+### Fixed
+
+- Guests get the previews of the files of a share, also of a file handed by
+  the share's link, as Talk does (#146, #144)
+- The settings button stays at the bottom left (#147)
+- Comparing other files while the viewer was open spun forever, and so did
+  trying again after a file compared failed to show (#153, #155)
+- The files compared are named in the order they are shown (#154)
+- A tall picture turned once made the viewer scroll (#157)
+- Stepping through a folder no longer shows a video's poster a second time
+  (#160)
+- A sidebar opened before the viewer, or left open when it closed, takes the
+  full height once a file is shown (#166)
+- Two tall pictures compared in a narrow viewer no longer make it scroll,
+  and their names stay apart and readable (#167)
 
 ### Other
 
 * Bump @playwright/test from 1.62.1 to 1.64.0
+
+### New Contributors
+
+* @mejo- made their first contribution in https://github.com/nextcloud-libraries/nextcloud-viewer/pull/142
 
 ## 2.0.0-beta.18
 
