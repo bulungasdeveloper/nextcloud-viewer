@@ -789,6 +789,50 @@ describe('Viewer sidebar', () => {
 		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(false)
 	})
 
+	// Opened from the files list first, then a file opened: the viewer heard
+	// it open while closed, and left it its usual height
+	it('expands a sidebar opened before the viewer once a file is shown', async () => {
+		addSidebar(700)
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		sidebarHandler('files:sidebar:opened')()
+		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(false)
+
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(true)
+	})
+
+	// Closing the viewer gives the header back, and the sidebar stays open:
+	// the next file opened has to take it over again
+	it('expands the sidebar again for the next file opened with it still open', async () => {
+		addSidebar(700)
+		const { vm, wrapper, emitModal } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		sidebarHandler('files:sidebar:opened')()
+		await emitModal('close')
+		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(false)
+
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(true)
+	})
+
+	it('leaves the header to a sidebar opened and closed before the viewer', async () => {
+		const sidebar = addSidebar(700)
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		sidebarHandler('files:sidebar:opened')()
+		sidebarHandler('files:sidebar:closed')()
+		sidebar.style.display = 'none'
+
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(false)
+	})
+
 	it('restores the header when the viewer closes with the sidebar open', async () => {
 		const { vm, wrapper, emitModal } = mountViewer([imageHandler()])
 		await vm.open([makeFile({ mime: 'image/jpeg' })], makeFile({ mime: 'image/jpeg' }))
