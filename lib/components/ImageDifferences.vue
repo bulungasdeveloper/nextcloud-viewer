@@ -136,6 +136,13 @@ function onError() {
 		color: #ffffff;
 		font-size: var(--font-size-small, 13px);
 		pointer-events: none;
+		// Each on its half of the picture: two version dates on a narrow,
+		// tall picture ran into each other
+		box-sizing: border-box;
+		max-width: calc(50% - 3 * var(--default-grid-baseline));
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 
 		&--base {
 			inset-inline-start: calc(2 * var(--default-grid-baseline));

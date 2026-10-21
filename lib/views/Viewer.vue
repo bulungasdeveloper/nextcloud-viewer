@@ -198,7 +198,8 @@
 		<div
 			v-if="isComparing"
 			v-show="!loading && !errorString"
-			class="viewer__comparison">
+			class="viewer__comparison"
+			:style="{ gap: `${COMPARISON_GAP}px` }">
 			<!-- The handlers are custom elements: they observe hyphenated
 			     attributes, so camelCase bindings are lost whenever the element
 			     is patched before it upgrades. -->
@@ -227,7 +228,7 @@
 					comparison="side-by-side"
 					:is-sidebar-shown="isSidebarShown"
 					:max-height="height"
-					:max-width="width / 2"
+					:max-width="(width - COMPARISON_GAP) / 2"
 					:editing="false"
 					@loaded="onLoad"
 					@errored="onError" />
@@ -240,7 +241,7 @@
 					comparison="side-by-side"
 					:is-sidebar-shown="isSidebarShown"
 					:max-height="height"
-					:max-width="width / 2"
+					:max-width="(width - COMPARISON_GAP) / 2"
 					:editing="false"
 					@loaded="onLoad"
 					@errored="onError" />
@@ -458,6 +459,9 @@ const trapElements = computed(() => [trapSidebar.value, imageEditor.value?.$el a
 	.filter((element): element is HTMLElement => element instanceof HTMLElement))
 /** Body class that expands the Files sidebar to full height next to the viewer. */
 const SIDEBAR_FULLSCREEN_CLASS = 'viewer--sidebar-fullscreen'
+// Between the two files side by side, in pixels: each one has half of what is
+// left, or two pictures limited by their width overflowed the viewer
+const COMPARISON_GAP = 8
 
 // Current context
 const currentFile = ref<IFile>()
@@ -2171,7 +2175,6 @@ defineExpose<ViewerAPI>({
 	flex-direction: row;
 	justify-content: center;
 	align-items: center;
-	gap: 8px;
 	width: 100%;
 	height: 100%;
 }
