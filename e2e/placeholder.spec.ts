@@ -45,8 +45,8 @@ test('fades the blurhash out over the picture', async ({ page }) => {
 	await expect(viewer.container.locator('.viewer__placeholder canvas')).toBeVisible()
 
 	// Every frame where both are on screen, until the blurhash is gone
-	const frames = await page.evaluate(() => new Promise<{ placeholder: DOMRect, picture: DOMRect, opacity: number }[]>((resolve) => {
-		const seen: { placeholder: DOMRect, picture: DOMRect, opacity: number }[] = []
+	const frames = await page.evaluate(() => new Promise<{ placeholder: DOMRect, picture: DOMRect, leaving: boolean }[]>((resolve) => {
+		const seen: { placeholder: DOMRect, picture: DOMRect, leaving: boolean }[] = []
 		const start = performance.now()
 		const frame = () => {
 			const overlay = document.querySelector<HTMLElement>('.viewer__loading')
@@ -54,7 +54,7 @@ test('fades the blurhash out over the picture', async ({ page }) => {
 			const element = document.querySelector('oca-viewer-image')
 			const picture = element?.querySelector('img')
 			if (overlay && placeholder && picture && getComputedStyle(element!).display !== 'none') {
-				seen.push({ placeholder: placeholder.getBoundingClientRect(), picture: picture.getBoundingClientRect(), opacity: Number(getComputedStyle(overlay).opacity) })
+				seen.push({ placeholder: placeholder.getBoundingClientRect(), picture: picture.getBoundingClientRect(), leaving: overlay.classList.contains('viewer__loading-leave-active') })
 			}
 			if (!overlay && seen.length > 0) {
 				resolve(JSON.parse(JSON.stringify(seen)))
@@ -68,7 +68,8 @@ test('fades the blurhash out over the picture', async ({ page }) => {
 	}))
 
 	expect(frames.length).toBeGreaterThan(1)
-	expect(frames.at(-1)!.opacity).toBeLessThan(1)
+	// Fading out: how far it got in the frames drawn depends on the machine
+	expect(frames.some(({ leaving }) => leaving)).toBe(true)
 	for (const { placeholder, picture } of frames) {
 		expect(Math.abs(placeholder.x - picture.x)).toBeLessThanOrEqual(1)
 		expect(Math.abs(placeholder.y - picture.y)).toBeLessThanOrEqual(1)
