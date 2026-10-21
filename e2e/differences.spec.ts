@@ -71,6 +71,18 @@ test.describe('A tall picture compared in a narrow viewer', () => {
 		await expect.poll(() => content.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0)
 	})
 
+	test('hides the names of the two under the pointer', async ({ page }) => {
+		await compareVersions(page, 'differences')
+		const label = page.locator('.image-differences__label').first()
+		await expect(label).toHaveCSS('opacity', '1')
+
+		await page.locator('.image-differences').hover()
+		await expect(label).toHaveCSS('opacity', '0')
+
+		await page.mouse.move(5, 790)
+		await expect(label).toHaveCSS('opacity', '1')
+	})
+
 	test('keeps the names of the two apart', async ({ page }) => {
 		await compareVersions(page, 'differences')
 		const [base, other] = await page.locator('.image-differences__label').all()

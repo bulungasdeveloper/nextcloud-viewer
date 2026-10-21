@@ -66,3 +66,26 @@ describe('the differences between two images', () => {
 		expect(wrapper.find('.image_container').exists()).toBe(false)
 	})
 })
+
+// They would cover what is being compared
+describe('the names of the two, under a finger', () => {
+	it('make way while the slider is held', async () => {
+		const wrapper = mountDifferences()
+		const slider = wrapper.find('input[type="range"]')
+
+		await slider.trigger('pointerdown')
+		expect(wrapper.classes()).toContain('image-differences--touched')
+
+		await slider.trigger('pointerup')
+		expect(wrapper.classes()).not.toContain('image-differences--touched')
+	})
+
+	it('come back when the touch is taken over', async () => {
+		const wrapper = mountDifferences()
+		const slider = wrapper.find('input[type="range"]')
+
+		await slider.trigger('pointerdown')
+		await slider.trigger('pointercancel')
+		expect(wrapper.classes()).not.toContain('image-differences--touched')
+	})
+})
