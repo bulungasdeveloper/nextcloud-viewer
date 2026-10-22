@@ -364,7 +364,9 @@ async function loadData() {
 	}
 
 	data.value = previewPath.value
-	shownFromPreview.value = hasPreview.value && !previewUrl.value
+	// The file itself when the server caps its previews below the screen:
+	// nothing sharper to fetch for the zoom then
+	shownFromPreview.value = hasPreview.value && !previewUrl.value && previewPath.value !== src.value
 }
 
 /**
