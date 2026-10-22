@@ -82,9 +82,16 @@ onMounted(async () => {
 </script>
 ```
 
-Until `loaded` arrives the viewer shows its spinner, so don't forget it. The
-element is mounted again for every file, and when comparing for every two files
-compared, which is why `onMounted` is enough here.
+Until `loaded` arrives the viewer shows its spinner, so don't forget it.
+
+> [!NOTE]
+> Your element shows one file. Going to the next or previous file mounts a new
+> element: `file` never changes on a live one. The same goes for every two files
+> compared, for a file shown again after it was saved or failed, and for a
+> `<nc-viewer-file>` given another file. The viewer turns its spinner back on
+> itself, so `loaded` or `errored` comes once per element, and `onMounted` is
+> enough here. The other props (`shown`, `maxWidth`, `maxHeight`, `editing`,
+> `turns`, ...) do change while your element is mounted.
 
 #### 3. Register it
 
@@ -248,7 +255,7 @@ const src = computed(() => props.file.encodedSource)
 
 | Event              | Payload   | Description                                                    |
 | ------------------ | --------- | ------------------------------------------------------------- |
-| `loaded`           | –         | Notify the viewer your component is done loading              |
+| `loaded`           | –         | Notify the viewer your component is done loading, once: a new element is mounted for each file |
 | `errored`          | `[Error]` | Notify the viewer an error occurred (custom message shown)    |
 | `update:canSwipe`  | `[boolean]` | Enable/disable the swipe gesture (e.g. for custom controls) |
 | `update:editing`   | `[boolean]` | Notify the viewer the editing mode changed                  |
