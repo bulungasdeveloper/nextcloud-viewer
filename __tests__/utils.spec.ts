@@ -26,6 +26,10 @@ vi.mock('@nextcloud/auth', () => ({
 	getCurrentUser: vi.fn(() => ({ uid: 'alice', displayName: 'Alice', isAdmin: false })),
 }))
 
+// What the server says of its previews, nothing unless a test says otherwise
+const capabilities = vi.hoisted(() => ({ value: {} as object }))
+vi.mock('@nextcloud/capabilities', () => ({ getCapabilities: () => capabilities.value }))
+
 // Public share helpers used by previewUtils.
 vi.mock('@nextcloud/sharing/public', () => ({
 	isPublicShare: vi.fn(() => false),
@@ -43,6 +47,7 @@ describe('previewUtils.getPreviewIfAny', () => {
 
 	afterEach(() => {
 		vi.unstubAllGlobals()
+		capabilities.value = {}
 	})
 
 	/**
@@ -201,6 +206,45 @@ describe('previewUtils.getPreviewIfAny', () => {
 		const file = makeFile({ basename: 'a#b c?.jpg', attributes: { hasPreview: false } })
 		expect(getPreviewIfAny(file)).toBe(file.encodedSource)
 		expect(getPreviewIfAny(file)).not.toContain('#')
+	})
+
+	// The display is 2000×1600 device pixels here
+	describe('on a server capping its previews', () => {
+		/**
+		 * Have the server say how large its previews go.
+		 *
+		 * @param width - The most pixels wide
+		 * @param height - The most pixels high
+		 */
+		function capPreviews(width: number, height: number) {
+			capabilities.value = { core: { previews: { max_width: width, max_height: height } } }
+		}
+
+		it('shows the file itself when the preview would be smaller than the space', () => {
+			capPreviews(512, 512)
+			const file = makeFileWithAttributes({ hasPreview: true })
+			expect(getPreviewIfAny(file)).toBe(file.encodedSource)
+		})
+
+		it('keeps the preview when it is large enough', () => {
+			capPreviews(4096, 4096)
+			expect(getPreviewIfAny(makeFileWithAttributes({ hasPreview: true }))).toContain('/core/preview?')
+		})
+
+		it('keeps the preview of a file the browser cannot show', () => {
+			capPreviews(512, 512)
+			const file = makeFile({ mime: 'image/heic', attributes: { hasPreview: true } })
+			expect(getPreviewIfAny(file)).toContain('/core/preview?')
+		})
+
+		it('keeps the preview of a share that forbids downloading', () => {
+			capPreviews(512, 512)
+			const file = makeFileWithAttributes({
+				hasPreview: true,
+				'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]),
+			})
+			expect(getPreviewIfAny(file)).toContain('/core/preview?')
+		})
 	})
 
 	// The server caps it at the original and at its own preview limit, so
