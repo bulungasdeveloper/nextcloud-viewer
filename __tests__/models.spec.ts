@@ -83,18 +83,23 @@ describe('the custom elements', () => {
 
 describe('videos model', () => {
 	it.each([
-		'video/mpeg',
 		'video/ogg',
 		'video/webm',
 		'video/mp4',
 		'video/x-m4v',
-		'video/x-flv',
 		'video/quicktime',
 	])('enables browser-supported mime %s', async (mime) => {
 		const { registerVideoHandler } = await import('../lib/models/videos.ts')
 		registerVideoHandler()
 		const handler = handlerById('videos')
 		expect(handler.enabled([makeFile({ mime })])).toBe(true)
+	})
+
+	// Neither Chromium nor Firefox reads these: the file downloads instead
+	it.each(['video/mpeg', 'video/x-flv'])('leaves %s to the download', async (mime) => {
+		const { registerVideoHandler } = await import('../lib/models/videos.ts')
+		registerVideoHandler()
+		expect(handlerById('videos').enabled([makeFile({ mime })])).toBe(false)
 	})
 
 	it('enables the aliased mime video/x-matroska (maps to video/webm)', async () => {

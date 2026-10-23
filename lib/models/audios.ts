@@ -10,6 +10,10 @@ import { logger } from '../services/logger.ts'
 import { defineCustomElementOnce } from '../utils/customElements.ts'
 import { t } from '../utils/l10n.ts'
 
+/**
+ * Mimes a file can carry, as the server assigns them or a remote storage
+ * reports them, whose format a browser plays on its own.
+ */
 export const browserSupportedMimes = [
 	'audio/aac',
 	'audio/aacp',
