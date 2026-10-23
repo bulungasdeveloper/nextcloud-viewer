@@ -51,8 +51,6 @@ const NOT_COVERED_HERE: Record<string, string> = {
 	// so a fixture would only record which browser ran the suite
 	'audio/aacp': 'Chromium reports it cannot play this',
 	'audio/vorbis': 'not a type any encoder writes; ogg carries vorbis',
-	'video/mpeg': 'no engine decodes MPEG-1/2 video',
-	'video/x-flv': 'no engine decodes Flash video',
 	'video/quicktime': 'decoding depends on the codecs inside the container',
 	'video/x-m4v': 'decoding depends on the codecs inside the container',
 	'video/x-matroska': 'aliased to webm; decoding depends on the codecs inside',

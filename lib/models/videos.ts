@@ -10,13 +10,18 @@ import { logger } from '../services/logger.ts'
 import { defineCustomElementOnce } from '../utils/customElements.ts'
 import { t } from '../utils/l10n.ts'
 
+/**
+ * Mimes a file can carry, as the server assigns them or a remote storage
+ * reports them, whose format a browser plays on its own. Not what
+ * `canPlayType` answers: a QuickTime file holding H.264 plays in Chromium,
+ * which still says it cannot. MPEG-1/2 (`video/mpeg`) and Flash video
+ * (`video/x-flv`) are left out, as neither Chromium nor Firefox reads them.
+ */
 export const browserSupportedMimes = [
-	'video/mpeg',
 	'video/ogg',
 	'video/webm',
 	'video/mp4',
 	'video/x-m4v',
-	'video/x-flv',
 	'video/quicktime',
 ]
 
