@@ -18,6 +18,8 @@ interface StoredConfig {
 	volume: number
 	/** Whether videos and audio start muted */
 	muted: boolean
+	/** Whether images are shown from the file itself rather than a preview */
+	original_images: boolean
 }
 
 /** The settings of a user who never changed them, as the server has them */
@@ -25,11 +27,12 @@ export const DEFAULT_CONFIG: Readonly<StoredConfig> = {
 	slideshow_delay: 5,
 	volume: 100,
 	muted: false,
+	original_images: false,
 }
 
 // No settings for a guest, or from a server that keeps none: they are then
 // only kept until the page is left
-const stored = loadState<StoredConfig | null>('viewer', 'config', null)
+const stored = loadState<Partial<StoredConfig> | null>('viewer', 'config', null)
 const config = reactive<StoredConfig>({ ...DEFAULT_CONFIG, ...stored })
 
 /**
@@ -54,6 +57,9 @@ async function setConfig<K extends keyof StoredConfig>(key: K, value: StoredConf
 	}
 }
 
+// A server older than the setting would refuse to save it
+const offersOriginalImages = stored === null || 'original_images' in stored
+
 /**
  * The user's viewer settings, the same for every viewer on the page.
  */
@@ -62,8 +68,11 @@ export function useViewerSettings() {
 		slideshowDelay: toRef(readonly(config), 'slideshow_delay'),
 		volume: toRef(readonly(config), 'volume'),
 		muted: toRef(readonly(config), 'muted'),
+		originalImages: toRef(readonly(config), 'original_images'),
+		offersOriginalImages,
 		setSlideshowDelay: (seconds: number) => setConfig('slideshow_delay', seconds),
 		setVolume: (percent: number) => setConfig('volume', percent),
 		setMuted: (muted: boolean) => setConfig('muted', muted),
+		setOriginalImages: (original: boolean) => setConfig('original_images', original),
 	}
 }

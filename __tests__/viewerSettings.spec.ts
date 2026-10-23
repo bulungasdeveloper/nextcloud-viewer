@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const stored = vi.hoisted(() => ({ value: null as { slideshow_delay: number, volume: number, muted: boolean } | null }))
+const stored = vi.hoisted(() => ({ value: null as Record<string, number | boolean> | null }))
 const put = vi.hoisted(() => vi.fn())
 const showError = vi.hoisted(() => vi.fn())
 vi.mock('@nextcloud/initial-state', () => ({ loadState: (app: string, key: string, fallback: unknown) => (app === 'viewer' && key === 'config' ? stored.value : null) ?? fallback }))
@@ -16,7 +16,7 @@ vi.mock('@nextcloud/dialogs', () => ({ showError }))
  *
  * @param settings - What the server handed the page, nothing for a guest
  */
-async function settingsWith(settings: { slideshow_delay: number, volume: number, muted: boolean } | null) {
+async function settingsWith(settings: Record<string, number | boolean> | null) {
 	stored.value = settings
 	vi.resetModules()
 	const { useViewerSettings } = await import('../lib/composables/useViewerSettings.ts')
@@ -24,7 +24,7 @@ async function settingsWith(settings: { slideshow_delay: number, volume: number,
 }
 
 /** What the server hands a user who never changed anything */
-const STORED = { slideshow_delay: 5, volume: 100, muted: false }
+const STORED = { slideshow_delay: 5, volume: 100, muted: false, original_images: false }
 
 beforeEach(() => {
 	put.mockReset()
@@ -91,5 +91,27 @@ describe('the volume', () => {
 
 		expect(put).toHaveBeenCalledWith(expect.stringContaining('/ocs/v2.php/apps/viewer/api/v1/config/volume'), { value: 40 })
 		expect(put).toHaveBeenCalledWith(expect.stringContaining('/ocs/v2.php/apps/viewer/api/v1/config/muted'), { value: true })
+	})
+})
+
+describe('original images', () => {
+	it('are off unless the user chose them', async () => {
+		expect((await settingsWith(null)).originalImages.value).toBe(false)
+		expect((await settingsWith({ ...STORED, original_images: true })).originalImages.value).toBe(true)
+	})
+
+	it('are kept on the server', async () => {
+		const settings = await settingsWith(STORED)
+
+		await settings.setOriginalImages(true)
+
+		expect(put).toHaveBeenCalledWith(expect.stringContaining('/ocs/v2.php/apps/viewer/api/v1/config/original_images'), { value: true })
+	})
+
+	// It would refuse to save them
+	it('are not offered by a server that does not know them', async () => {
+		expect((await settingsWith({ slideshow_delay: 5, volume: 100, muted: false })).offersOriginalImages).toBe(false)
+		expect((await settingsWith(STORED)).offersOriginalImages).toBe(true)
+		expect((await settingsWith(null)).offersOriginalImages).toBe(true)
 	})
 })

@@ -8,6 +8,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import { File } from '@nextcloud/files'
 import { isPublicShare } from '@nextcloud/sharing/public'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useViewerSettings } from '../lib/composables/useViewerSettings.ts'
 import {
 	findLivePhotoPeerFromFileId,
 	findLivePhotoPeerFromName,
@@ -239,6 +240,34 @@ describe('previewUtils.getPreviewIfAny', () => {
 
 		it('keeps the preview of a share that forbids downloading', () => {
 			capPreviews(512, 512)
+			const file = makeFileWithAttributes({
+				hasPreview: true,
+				'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]),
+			})
+			expect(getPreviewIfAny(file)).toContain('/core/preview?')
+		})
+	})
+
+	describe('for a user who chose original images', () => {
+		beforeEach(async () => {
+			await useViewerSettings().setOriginalImages(true)
+		})
+
+		afterEach(async () => {
+			await useViewerSettings().setOriginalImages(false)
+		})
+
+		it('shows the file itself', () => {
+			const file = makeFileWithAttributes({ hasPreview: true })
+			expect(getPreviewIfAny(file)).toBe(file.encodedSource)
+		})
+
+		it('keeps the preview of a file the browser cannot show', () => {
+			const file = makeFile({ mime: 'image/heic', attributes: { hasPreview: true } })
+			expect(getPreviewIfAny(file)).toContain('/core/preview?')
+		})
+
+		it('keeps the preview of a share that forbids downloading', () => {
 			const file = makeFileWithAttributes({
 				hasPreview: true,
 				'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]),

@@ -20,6 +20,16 @@
 				@update:modelValue="onDelaySelected" />
 		</NcAppSettingsSection>
 
+		<NcAppSettingsSection v-if="offersOriginalImages" id="viewer-settings-images" :name="t('Images')">
+			<NcFormBox>
+				<NcFormBoxSwitch
+					:label="t('Show original images instead of previews')"
+					:description="t('Sharper, but slower to load and uses more data.')"
+					:modelValue="originalImages"
+					@update:modelValue="setOriginalImages" />
+			</NcFormBox>
+		</NcAppSettingsSection>
+
 		<NcAppSettingsShortcutsSection>
 			<NcHotkeyList :label="t('Navigation')">
 				<!-- Previous and next follow the reading direction -->
@@ -47,6 +57,8 @@ import { computed } from 'vue'
 import NcAppSettingsDialog from '@nextcloud/vue/components/NcAppSettingsDialog'
 import NcAppSettingsSection from '@nextcloud/vue/components/NcAppSettingsSection'
 import NcAppSettingsShortcutsSection from '@nextcloud/vue/components/NcAppSettingsShortcutsSection'
+import NcFormBox from '@nextcloud/vue/components/NcFormBox'
+import NcFormBoxSwitch from '@nextcloud/vue/components/NcFormBoxSwitch'
 import NcHotkey from '@nextcloud/vue/components/NcHotkey'
 import NcHotkeyList from '@nextcloud/vue/components/NcHotkeyList'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
@@ -72,7 +84,7 @@ interface DelayOption {
 }
 
 const rtl = isRTL()
-const { slideshowDelay, setSlideshowDelay } = useViewerSettings()
+const { slideshowDelay, setSlideshowDelay, originalImages, offersOriginalImages, setOriginalImages } = useViewerSettings()
 
 // The current delay is listed too when it is none of the offered ones:
 // the server accepts any from 1 to 60 seconds

@@ -66,3 +66,18 @@ describe('the slideshow delay dropdown', () => {
 		expect(select.props('modelValue')).toEqual({ id: 30, label: '30 seconds' })
 	})
 })
+
+describe('the original images switch', () => {
+	afterEach(async () => {
+		await useViewerSettings().setOriginalImages(false)
+	})
+
+	it('saves the choice', async () => {
+		const toggle = mountSettings().findComponent({ name: 'NcFormBoxSwitch' })
+
+		toggle.vm.$emit('update:modelValue', true)
+		await toggle.vm.$nextTick()
+
+		expect(useViewerSettings().originalImages.value).toBe(true)
+	})
+})
