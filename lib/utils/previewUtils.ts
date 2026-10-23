@@ -10,6 +10,7 @@ import { getCapabilities } from '@nextcloud/capabilities'
 import { encodePath } from '@nextcloud/paths'
 import { generateUrl } from '@nextcloud/router'
 import { getSharingToken, isPublicShare } from '@nextcloud/sharing/public'
+import { useViewerSettings } from '../composables/useViewerSettings.ts'
 import { browserSupportedMimes } from '../models/images.ts'
 import { canDownload } from './canDownload.ts'
 import { publicShareOf } from './publicShare.ts'
@@ -90,35 +91,41 @@ export function getPreviewIfAny(file: IFile, available?: AvailableSpace): string
 	const { x, y } = previewSize(available)
 	// Encoded: this is handed to a media element as its `src`, and a name
 	// holding a `#` or a `?` would otherwise cut the URL short.
-	if (previewTooSmall(file, x, y)) {
+	if (showsOriginal(file, x, y)) {
 		return file.encodedSource
 	}
 	return serverPreview(file, x, y) ?? file.encodedSource
 }
 
 /**
- * Whether the server would render the file smaller than the space it fills,
- * when the browser could show the file itself instead.
+ * Whether to show the file itself rather than its preview, when the browser
+ * can show it and the share lets it be downloaded.
  *
- * An admin can cap previews well below the screen (`preview_max_x`,
- * `preview_max_y`), and the server then answers that small preview however
- * large it is asked for, so the picture shows blurred. Its capabilities say
- * where the cap is, without fetching a preview to find out. Older servers
- * do not say, and keep their previews.
+ * Either the user chose originals in the viewer settings, or the server
+ * would render the file smaller than the space it fills: an admin can cap
+ * previews well below the screen (`preview_max_x`, `preview_max_y`), and the
+ * server then answers that small preview however large it is asked for, so
+ * the picture shows blurred. Its capabilities say where the cap is, without
+ * fetching a preview to find out. Older servers do not say.
  *
  * @param file - The file to show
  * @param x - The pixels wide it fills
  * @param y - The pixels high it fills
  */
-function previewTooSmall(file: IFile, x: number, y: number): boolean {
+function showsOriginal(file: IFile, x: number, y: number): boolean {
+	if (!browserSupportedMimes.includes(file.mime ?? '')
+		// A share that forbids downloading serves the preview, never the file
+		|| !canDownload(file)) {
+		return false
+	}
+	if (useViewerSettings().originalImages.value) {
+		return true
+	}
 	const limit = (getCapabilities() as PreviewCapabilities).core?.previews
 	if (!limit?.max_width || !limit.max_height) {
 		return false
 	}
-	return (x > limit.max_width || y > limit.max_height)
-		&& browserSupportedMimes.includes(file.mime ?? '')
-		// A share that forbids downloading serves the preview, never the file
-		&& canDownload(file)
+	return x > limit.max_width || y > limit.max_height
 }
 
 /**
