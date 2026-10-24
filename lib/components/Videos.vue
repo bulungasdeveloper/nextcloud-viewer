@@ -43,6 +43,11 @@
 					class="viewer-media__poster"
 					alt=""
 					:src="poster">
+				<!-- The sound plays on: only the picture is lost -->
+				<p v-if="pictureMissing" class="viewer-media__no-picture" role="status">
+					<VideoOffOutlineIcon :size="18" />
+					{{ t('Your browser can\'t show this video\'s picture, only its sound') }}
+				</p>
 			</video-skin>
 		</video-player>
 	</media-i18n>
@@ -52,6 +57,7 @@
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import VideoOffOutlineIcon from 'vue-material-design-icons/VideoOffOutline.vue'
 import { useMediaPlayer } from '../composables/useMediaPlayer.ts'
 import { useVideojsAdapter } from '../composables/useVideojsAdapter.ts'
 import { logger } from '../services/logger.ts'
@@ -106,6 +112,16 @@ const livePhotoPath = computed(() => {
 const videoPreview = ref<string>()
 const knownSize = ref<{ width: number, height: number }>()
 let previewLoad: AbortController | undefined
+// The width the browser decoded the picture at, once it has the metadata
+const decodedWidth = ref<number>()
+
+/**
+ * Whether the video has a picture the browser cannot decode, HEVC in many
+ * of them: its metadata loads with no size, and the sound plays over black,
+ * without an error. Only for a video known to have a picture, from its
+ * preview or its header, as a file with only sound is no size too.
+ */
+const pictureMissing = computed(() => decodedWidth.value === 0 && knownSize.value !== undefined)
 
 // The picture of the same name beside the video when there is one: it is
 // what people put there to be shown. The video's own preview otherwise.
@@ -114,6 +130,7 @@ const poster = computed(() => livePhotoPath.value ?? videoPreview.value)
 watch(() => props.file.source, (source) => {
 	previewLoad?.abort()
 	knownSize.value = undefined
+	decodedWidth.value = undefined
 	if (!canDownload(props.file) || props.file.attributes?.['e2ee-is-encrypted']) {
 		videoPreview.value = undefined
 		return
@@ -173,6 +190,7 @@ function updateVideoSize() {
  */
 function onLoadedMetadata() {
 	logger.debug('Video metadata loaded, updating size', { filename: props.file.basename })
+	decodedWidth.value = video.value?.videoWidth ?? 0
 	updateVideoSize()
 	showBeforePlayable()
 }
@@ -195,6 +213,28 @@ function onLoadedMetadata() {
 	max-width: 100%;
 	max-height: 100%;
 	background-color: black;
+}
+
+.viewer-media__no-picture {
+	position: absolute;
+	top: calc(2 * var(--default-grid-baseline));
+	inset-inline-start: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	gap: var(--default-grid-baseline);
+	max-width: calc(100% - 4 * var(--default-grid-baseline));
+	margin: 0;
+	padding: var(--default-grid-baseline) calc(3 * var(--default-grid-baseline));
+	border: 1px solid rgba(255, 255, 255, .25);
+	border-radius: var(--border-radius-pill);
+	background-color: rgba(0, 0, 0, .75);
+	color: white;
+	pointer-events: none;
+}
+
+[dir="rtl"] .viewer-media__no-picture {
+	transform: translateX(50%);
 }
 
 .viewer-media__poster {
