@@ -537,6 +537,40 @@ describe('Videos.vue (smoke)', () => {
 	})
 })
 
+// HEVC in many browsers: the sound plays over black, with no error
+describe('a video whose picture the browser cannot decode', () => {
+	/**
+	 * Show a video the browser decodes at this width.
+	 *
+	 * @param decodedWidth - The width the metadata comes with, 0 for no picture
+	 * @param headerSize - What the file's header says of its picture
+	 */
+	async function showVideo(decodedWidth: number, headerSize?: { width: number, height: number }) {
+		probeFile.mockResolvedValueOnce(headerSize ? { indexFirst: true, size: headerSize } : undefined)
+		const file = makeFile({ basename: 'IMG_0001.mov', mime: 'video/quicktime' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+		const video = wrapper.find('video').element as HTMLVideoElement
+		Object.defineProperty(video, 'videoWidth', { value: decodedWidth, configurable: true })
+		Object.defineProperty(video, 'videoHeight', { value: decodedWidth === 0 ? 0 : 1080, configurable: true })
+		await wrapper.find('video').trigger('loadedmetadata')
+		return wrapper.find('.viewer-media__no-picture').exists()
+	}
+
+	it('says so, and lets the sound play on', async () => {
+		expect(await showVideo(0, { width: 1920, height: 1080 })).toBe(true)
+	})
+
+	it('says nothing of a picture it decoded', async () => {
+		expect(await showVideo(1920, { width: 1920, height: 1080 })).toBe(false)
+	})
+
+	// A file with only sound has no size either
+	it('says nothing of a file with no picture to show', async () => {
+		expect(await showVideo(0)).toBe(false)
+	})
+})
+
 // Space, m, j and l reach the player: the arrows still step through the files
 describe('the keyboard, once the media is on screen', () => {
 	// The skin itself: the modal's focus trap would take back a focus in its
